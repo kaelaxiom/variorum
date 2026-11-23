@@ -1,0 +1,87 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "conformance",
+  "description": "Rules from spec/07-conformance.md about the conformance declaration itself (CON-5, CON-6, CORE-7).",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "conformance/declaration-must-be-array",
+      "class": "core",
+      "description": "A bare string is not a list of classes.",
+      "rules": ["CON-5"],
+      "patch": { "extensions": { "variorum:conformance": "core" } },
+      "expect": { "valid": false, "rules": ["CON-5"] }
+    },
+    {
+      "name": "conformance/unknown-class-rejected",
+      "class": "core",
+      "description": "'provenance' is not a conformance class of this format.",
+      "rules": ["CON-5"],
+      "patch": { "extensions": { "variorum:conformance": ["core", "provenance"] } },
+      "expect": { "valid": false, "rules": ["CON-5"] }
+    },
+    {
+      "name": "conformance/declared-lineage-must-exist",
+      "class": "core",
+      "description": "Declaring lineage without a lineage member is a claim the record does not back.",
+      "rules": ["CON-6"],
+      "patch": { "extensions": { "variorum:conformance": ["core", "lineage"] } },
+      "expect": { "valid": false, "rules": ["CON-6"] }
+    },
+    {
+      "name": "conformance/declared-recipe-must-exist",
+      "class": "core",
+      "description": "The same applies to recipe: the class is the member.",
+      "rules": ["CON-6"],
+      "patch": { "extensions": { "variorum:conformance": ["core", "recipe"] } },
+      "expect": { "valid": false, "rules": ["CON-6"] }
+    },
+    {
+      "name": "conformance/core-declaration-accepted",
+      "class": "core",
+      "description": "core needs no member of its own: every valid record satisfies it.",
+      "rules": ["CON-5", "CON-6"],
+      "patch": { "extensions": { "variorum:conformance": ["core"] } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "conformance/declared-lineage-accepted",
+      "class": "lineage",
+      "description": "The declaration matches the members the record carries.",
+      "rules": ["CON-5", "CON-6"],
+      "patch": {
+        "lineage": {
+          "parents": [
+            { "id": "urn:variorum:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "relation": "revision" }
+          ]
+        },
+        "extensions": { "variorum:conformance": ["core", "lineage"] }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "conformance/undeclared-class-accepted",
+      "class": "recipe",
+      "description": "Under-declaring is a SHOULD violation (CORE-7) and a warning, never a rejection; absence of a declaration says nothing about the members (CORE-8).",
+      "rules": ["CORE-7", "CORE-8"],
+      "patch": {
+        "recipe": {
+          "kind": "manual",
+          "steps": ["Press the record into the folder."]
+        }
+      },
+      "expect": { "valid": true }
+    }
+  ]
+}

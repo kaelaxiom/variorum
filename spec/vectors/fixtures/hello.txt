@@ -1,0 +1,2 @@
+Variorum conformance fixture.
+This file exists so that digest and size rules can be tested against real bytes.

@@ -10,12 +10,15 @@ Commands
     variorum digest <artifact>
     variorum stamp <artifact> [options]
     variorum validate <record.json> [--artifact <artifact>]
+    variorum conform [--vectors <dir>] [--coverage] [--verbose]
     variorum show <record.json>
     variorum graph <record.json>... [--mermaid]
     variorum verify <record.json> [--artifact <artifact>]
 
 Every validation failure is reported with the rule identifier from the
-specification so that an implementer can look it up.
+specification so that an implementer can look it up. A violated MUST is an
+error and makes the record non-conformant; a violated SHOULD is a warning and
+does not (ADR-0005).
 """
 
 from __future__ import annotations
@@ -32,15 +35,26 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.1.0"
+TOOL_VERSION = "0.2.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+$")
-SCHEME_NAME_PATTERN = re.compile(r"^(semver|calver|pep440|debian|rpm|maven|nuget|date|sequence|custom|none|x-[a-z0-9-]+)$")
+# SCH-2: any lowercase scheme name; the reserved table names carry meaning,
+# everything else is opaque to a consumer. The x- prefix is a SHOULD (SCH-10).
+SCHEME_NAME_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
+MEDIA_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+$")
+URI_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:[\S]+$")
 TIMESTAMP_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
 
+RESERVED_SCHEMES = {
+    "semver", "calver", "pep440", "debian", "rpm", "maven", "nuget",
+    "date", "sequence", "custom", "none",
+}
 SCHEMES_WITHOUT_VERSION = {"none"}
+CONFORMANCE_CLASSES = {"core", "lineage", "recipe", "attestation"}
+VECTOR_KINDS = {"record", "graph", "jcs"}
+VECTOR_SUITE = "variorum-vectors/1"
 RELATIONS = {"generation", "revision", "edit", "render", "transcode", "fork", "restore", "derivation"}
 RECIPE_KINDS = {"manual", "build", "generative", "hybrid"}
 STATES = {"draft", "candidate", "approved", "published", "superseded", "rejected", "archived"}
@@ -61,10 +75,15 @@ LEGAL_TRANSITIONS: dict[str, set[str]] = {
 
 @dataclass
 class Issue:
-    """One conformance failure, always tied to a rule identifier."""
+    """One conformance finding, always tied to a rule identifier.
+
+    ``severity`` is ``error`` for a violated MUST and ``warning`` for a
+    violated SHOULD; only errors make a record non-conformant (ADR-0005).
+    """
 
     rule: str
     message: str
+    severity: str = "error"
 
     def __str__(self) -> str:
         return f"[{self.rule}] {self.message}"
@@ -77,9 +96,21 @@ class Report:
     def add(self, rule: str, message: str) -> None:
         self.issues.append(Issue(rule, message))
 
+    def warn(self, rule: str, message: str) -> None:
+        """Record a violated SHOULD. Warnings never invalidate a record."""
+        self.issues.append(Issue(rule, message, severity="warning"))
+
+    @property
+    def errors(self) -> list[Issue]:
+        return [issue for issue in self.issues if issue.severity == "error"]
+
+    @property
+    def warnings(self) -> list[Issue]:
+        return [issue for issue in self.issues if issue.severity == "warning"]
+
     @property
     def ok(self) -> bool:
-        return not self.issues
+        return not self.errors
 
 
 def file_digest(path: Path) -> str:
@@ -127,7 +158,7 @@ def validate_core(record: dict[str, Any], report: Report) -> None:
 
 
 def validate_identity(record: dict[str, Any], report: Report, artifact: Path | None) -> None:
-    """ID-2..ID-11 plus the id/digest equality rule (ID-8)."""
+    """ID-2..ID-12 plus the id/digest equality rule (ID-8)."""
     artifact_member = record.get("artifact")
     if not isinstance(artifact_member, dict):
         report.add("ID-1", "'artifact' must be present and must be an object")
@@ -141,6 +172,12 @@ def validate_identity(record: dict[str, Any], report: Report, artifact: Path | N
     size = artifact_member.get("size")
     if size is not None and (not isinstance(size, int) or isinstance(size, bool) or size < 0):
         report.add("ID-4", "'artifact.size' must be a non-negative integer")
+
+    media_type = artifact_member.get("mediaType")
+    if media_type is not None and (
+        not isinstance(media_type, str) or not MEDIA_TYPE_PATTERN.match(media_type)
+    ):
+        report.add("ID-5", "'artifact.mediaType' must follow the type/subtype syntax of RFC 2046")
 
     record_id = record.get("id")
     if not isinstance(record_id, str) or not ID_PATTERN.match(record_id):
@@ -160,24 +197,30 @@ def validate_identity(record: dict[str, Any], report: Report, artifact: Path | N
             report.add("ID-4", f"artifact size mismatch: record says {size}, file is {artifact.stat().st_size}")
 
 
-def validate_actor(actor: Any, report: Report, member: str) -> None:
-    """ID-10, ID-11, ID-12 and the actor shape shared by producer and transitions."""
+def validate_actor(
+    actor: Any,
+    report: Report,
+    member: str,
+    shape_rule: str = "ID-10",
+    kind_rule: str = "ID-11",
+) -> None:
+    """The actor shape shared by producer (ID-10..ID-12) and transitions (STA-6)."""
     if not isinstance(actor, dict):
-        report.add("ID-10", f"'{member}' must be an object")
+        report.add(shape_rule, f"'{member}' must be an object")
         return
     if not isinstance(actor.get("name"), str) or not actor["name"]:
-        report.add("ID-10", f"'{member}.name' must be a non-empty string")
+        report.add(shape_rule, f"'{member}.name' must be a non-empty string")
     kind = actor.get("kind")
     if kind is not None and kind not in ACTOR_KINDS:
-        report.add("ID-11", f"'{member}.kind' must be one of {sorted(ACTOR_KINDS)}")
+        report.add(kind_rule, f"'{member}.kind' must be one of {sorted(ACTOR_KINDS)}")
     if kind == "software":
         software = actor.get("software")
         if not isinstance(software, dict) or not isinstance(software.get("name"), str):
-            report.add("ID-12", f"'{member}.software' should identify the software by name")
+            report.warn("ID-12", f"'{member}.software' should identify the software by name")
 
 
 def validate_scheme(record: dict[str, Any], report: Report) -> None:
-    """SCH-1..SCH-3."""
+    """SCH-1..SCH-4, SCH-8 and the SCH-10 recommendation."""
     scheme = record.get("scheme")
     if not isinstance(scheme, dict):
         report.add("SCH-1", "'scheme' must be present and must be an object")
@@ -185,7 +228,7 @@ def validate_scheme(record: dict[str, Any], report: Report) -> None:
 
     name = scheme.get("name")
     if not isinstance(name, str) or not SCHEME_NAME_PATTERN.match(name):
-        report.add("SCH-2", "'scheme.name' must be a reserved name or x-<vendor>-<name>")
+        report.add("SCH-2", "'scheme.name' must be a lowercase string matching ^[a-z][a-z0-9-]*$")
         return
 
     version = scheme.get("version")
@@ -196,12 +239,15 @@ def validate_scheme(record: dict[str, Any], report: Report) -> None:
         report.add("SCH-3", "'scheme.version' must be present unless scheme.name is 'none'")
 
     authority = scheme.get("authority")
-    if authority is not None and not isinstance(authority, str):
+    if authority is not None and (not isinstance(authority, str) or not URI_PATTERN.match(authority)):
         report.add("SCH-4", "'scheme.authority' must be an absolute URI")
 
     sequence = scheme.get("sequence")
     if sequence is not None and (not isinstance(sequence, int) or isinstance(sequence, bool) or sequence < 0):
         report.add("SCH-8", "'scheme.sequence' must be a non-negative integer")
+
+    if name not in RESERVED_SCHEMES and not name.startswith("x-"):
+        report.warn("SCH-10", f"scheme name '{name}' is project-specific and should carry the 'x-' prefix")
 
 
 def validate_lineage(record: dict[str, Any], report: Report) -> None:
@@ -241,44 +287,74 @@ def validate_recipe(record: dict[str, Any], report: Report) -> None:
         report.add("REC-1", "'recipe' must be an object")
         return
 
+    validate_recipe_body(recipe, report, "recipe")
+
+
+def validate_recipe_body(recipe: dict[str, Any], report: Report, path: str) -> None:
+    """Rules shared by a recipe and by each stage of a hybrid recipe (REC-19)."""
     kind = recipe.get("kind")
     if kind not in RECIPE_KINDS:
-        report.add("REC-2", f"'recipe.kind' must be one of {sorted(RECIPE_KINDS)}")
+        report.add("REC-2", f"'{path}.kind' must be one of {sorted(RECIPE_KINDS)}")
         return
 
     if kind == "build":
         source = recipe.get("source")
         if not isinstance(source, dict) or not (source.get("ref") or source.get("digest")):
-            report.add("REC-4", "a build recipe must declare 'source' with a ref or a digest")
+            report.add("REC-4", f"a build recipe must declare '{path}.source' with a ref or a digest")
+        tools = recipe.get("tool")
+        if tools is None:
+            report.add("REC-3", f"a build recipe must declare '{path}.tool' (the toolchain)")
+        else:
+            tool_list = tools if isinstance(tools, list) else [tools]
+            if not tool_list:
+                report.add("REC-3", f"'{path}.tool' must identify at least one tool")
+            for index, tool in enumerate(tool_list):
+                if not isinstance(tool, dict) or not isinstance(tool.get("name"), str) or not tool.get("name"):
+                    report.add("REC-3", f"'{path}.tool[{index}]' must identify the tool by name")
+                elif not tool.get("version"):
+                    report.warn("REC-5", f"'{path}.tool[{index}]' should identify the tool version")
 
     if kind == "generative":
         tool = recipe.get("tool")
         has_tool = isinstance(tool, dict) and bool(tool.get("name")) and bool(tool.get("model"))
         if not has_tool:
-            report.add("REC-7", "a generative recipe must declare 'tool' with name and model")
+            report.add("REC-7", f"a generative recipe must declare '{path}.tool' with name and model")
         has_snapshot = isinstance(tool, dict) and tool.get("snapshot") is not None
         if not has_snapshot and recipe.get("generatedAt") is None:
-            report.add("REC-8", "a generative recipe must record 'tool.snapshot' or 'generatedAt'")
+            report.add("REC-8", f"a generative recipe must record '{path}.tool.snapshot' or 'generatedAt'")
         if not isinstance(recipe.get("prompt"), str):
-            report.add("REC-6", "a generative recipe must record the prompt verbatim")
+            report.add("REC-6", f"a generative recipe must record the prompt verbatim in '{path}.prompt'")
 
     if kind == "hybrid":
         stages = recipe.get("stages")
         if not isinstance(stages, list) or not stages:
-            report.add("REC-19", "a hybrid recipe must declare 'stages'")
+            report.add("REC-19", f"a hybrid recipe must declare '{path}.stages'")
+        else:
+            for index, stage in enumerate(stages):
+                stage_path = f"{path}.stages[{index}]"
+                if not isinstance(stage, dict) or stage.get("kind") not in {"build", "generative"}:
+                    report.add("REC-19", f"'{stage_path}.kind' must be 'build' or 'generative'")
+                    continue
+                validate_recipe_body(stage, report, stage_path)
 
     inputs = recipe.get("inputs")
     if inputs is not None:
         if not isinstance(inputs, list):
-            report.add("REC-14", "'recipe.inputs' must be an array")
+            report.add("REC-14", f"'{path}.inputs' must be an array")
         else:
             for index, item in enumerate(inputs):
                 if not isinstance(item, dict) or not item.get("ref") or not item.get("role"):
-                    report.add("REC-14", f"inputs[{index}] must carry 'ref' and 'role'")
+                    report.add("REC-14", f"'{path}.inputs[{index}]' must carry 'ref' and 'role'")
+                elif not (ID_PATTERN.match(str(item["ref"])) or URI_PATTERN.match(str(item["ref"]))):
+                    report.add("REC-15", f"'{path}.inputs[{index}].ref' must be a Variorum id or an absolute URI")
 
     determinism = recipe.get("determinism")
     if determinism is not None and determinism not in {"none", "seeded", "full"}:
-        report.add("REC-12", "'recipe.determinism' must be none, seeded or full")
+        report.warn("REC-12", f"'{path}.determinism' should be none, seeded or full")
+
+    generated_at = recipe.get("generatedAt")
+    if generated_at is not None and not is_timestamp(generated_at):
+        report.add("CORE-6", f"'{path}.generatedAt' must be an RFC 3339 timestamp with an explicit offset")
 
 
 def validate_state(record: dict[str, Any], report: Report) -> None:
@@ -309,7 +385,10 @@ def validate_state(record: dict[str, Any], report: Report) -> None:
                 report.add("STA-4", f"transitions[{index}] is missing '{member}'")
         if not is_timestamp(transition.get("at")):
             report.add("STA-5", f"transitions[{index}].at must be an RFC 3339 timestamp with offset")
-        validate_actor(transition.get("actor"), report, f"transitions[{index}].actor")
+        if isinstance(transition.get("actor"), dict):
+            validate_actor(transition["actor"], report, f"transitions[{index}].actor", shape_rule="STA-6")
+        elif "actor" in transition:
+            report.add("STA-6", f"transitions[{index}].actor must identify the decision-maker")
 
         source_state = transition.get("from")
         target_state = transition.get("to")
@@ -329,14 +408,19 @@ def validate_state(record: dict[str, Any], report: Report) -> None:
         elif current != "draft":
             report.add("STA-7", "'state.current' must be 'draft' when there are no transitions")
 
-    if current == "superseded" and not state.get("supersededBy"):
-        report.add("STA-12", "'state.supersededBy' is required when the state is 'superseded'")
+    if current == "superseded":
+        successor = state.get("supersededBy")
+        if not isinstance(successor, str) or not ID_PATTERN.match(successor):
+            report.add("STA-12", "'state.supersededBy' must be a Variorum identifier when the state is 'superseded'")
 
 
 def validate_attestation(record: dict[str, Any], report: Report) -> None:
     """ATT-1..ATT-5."""
     attestation = record.get("attestation")
     if attestation is None:
+        return
+    if isinstance(attestation, str) or not isinstance(attestation, (dict, list)):
+        report.add("ATT-1", "'attestation' must be an object or an array of objects")
         return
     entries = attestation if isinstance(attestation, list) else [attestation]
     if isinstance(attestation, list) and not entries:
@@ -346,11 +430,38 @@ def validate_attestation(record: dict[str, Any], report: Report) -> None:
         if not isinstance(entry, dict):
             report.add("ATT-1", f"attestation[{index}] must be an object")
             continue
-        if entry.get("algorithm") not in ALGORITHMS:
+        if "algorithm" not in entry or "signature" not in entry:
+            report.add("ATT-2", f"attestation[{index}] must carry 'algorithm' and 'signature'")
+        if "algorithm" in entry and entry.get("algorithm") not in ALGORITHMS:
             report.add("ATT-5", f"attestation[{index}].algorithm must be one of {sorted(ALGORITHMS)}")
         signature = entry.get("signature")
-        if not isinstance(signature, str) or not re.match(r"^[A-Za-z0-9_-]+$", signature):
+        if "signature" in entry and (not isinstance(signature, str) or not re.match(r"^[A-Za-z0-9_-]+$", signature)):
             report.add("ATT-3", f"attestation[{index}].signature must be base64url without padding")
+        keyid = entry.get("keyid")
+        if "keyid" in entry and not isinstance(keyid, str):
+            report.add("ATT-4", f"attestation[{index}].keyid must be a string")
+
+
+def validate_declaration(record: dict[str, Any], report: Report) -> None:
+    """CON-5, CON-6 and the CORE-7 recommendation about extensions["variorum:conformance"]."""
+    extensions = record.get("extensions")
+    declared = extensions.get("variorum:conformance") if isinstance(extensions, dict) else None
+
+    if declared is not None:
+        if not isinstance(declared, list) or not all(isinstance(item, str) for item in declared):
+            report.add("CON-5", "'variorum:conformance' must be an array of class names")
+        else:
+            unknown = [item for item in declared if item not in CONFORMANCE_CLASSES]
+            if unknown:
+                report.add("CON-5", f"unknown conformance class {unknown}; expected a subset of {sorted(CONFORMANCE_CLASSES)}")
+            for class_name in declared:
+                if class_name in CONFORMANCE_CLASSES and class_name != "core" and record.get(class_name) is None:
+                    report.add("CON-6", f"the record declares '{class_name}' but carries no '{class_name}' member")
+
+    declared_names = set(declared) if isinstance(declared, list) and all(isinstance(item, str) for item in declared) else set()
+    for class_name in ("lineage", "recipe", "attestation"):
+        if record.get(class_name) is not None and class_name not in declared_names:
+            report.warn("CORE-7", f"the record carries '{class_name}' but does not declare the '{class_name}' class")
 
 
 def validate_extensions(record: dict[str, Any], report: Report) -> None:
@@ -363,11 +474,11 @@ def validate_extensions(record: dict[str, Any], report: Report) -> None:
         return
     for key in extensions:
         if ":" not in key:
-            report.add("CORE-10", f"extension key '{key}' should be namespaced with a '<prefix>:<name>' form")
+            report.warn("CORE-10", f"extension key '{key}' should be namespaced with a '<prefix>:<name>' form")
 
 
 def validate_record(record: Any, artifact: Path | None = None) -> Report:
-    """Run every applicable rule and collect the failures."""
+    """Run every applicable rule and collect the findings."""
     report = Report()
     if not isinstance(record, dict):
         report.add("CORE-1", "the record must be a JSON object")
@@ -381,6 +492,7 @@ def validate_record(record: Any, artifact: Path | None = None) -> Report:
     validate_state(record, report)
     validate_attestation(record, report)
     validate_extensions(record, report)
+    validate_declaration(record, report)
     return report
 
 
@@ -461,6 +573,303 @@ def build_graph(records: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, str,
 
 
 # --------------------------------------------------------------------------- #
+# Conformance suite (spec/07-conformance.md)
+# --------------------------------------------------------------------------- #
+
+RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT")
+RULE_PATTERN = re.compile(r"\b(" + "|".join(RULE_FAMILIES) + r")-[0-9]+\b")
+
+
+@dataclass
+class Vector:
+    """One conformance case, resolved from a vector file."""
+
+    name: str
+    group: str
+    class_name: str
+    kind: str
+    source: Path
+    rules: list[str] = field(default_factory=list)
+    record: Any = None
+    records: list[Any] = field(default_factory=list)
+    expect: dict[str, Any] = field(default_factory=dict)
+    artifact: Path | None = None
+
+
+def default_vectors_dir() -> Path:
+    """The suite that ships with this repository, independent of the cwd."""
+    return Path(__file__).resolve().parent.parent / "spec" / "vectors"
+
+
+def load_vectors(directory: Path) -> tuple[list[Vector], list[Issue]]:
+    """Read every vector file, applying CON-14..CON-22. Returns (vectors, suite errors)."""
+    vectors: list[Vector] = []
+    suite_errors: list[Issue] = []
+    seen_names: set[str] = set()
+
+    for path in sorted(directory.glob("*.json")):
+        if path.name == "exemptions.json":
+            continue
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            suite_errors.append(Issue("CON-14", f"{path.name}: not valid JSON — {error}"))
+            continue
+        if not isinstance(document, dict) or document.get("suite") != VECTOR_SUITE:
+            suite_errors.append(Issue("CON-14", f"{path.name}: 'suite' must be '{VECTOR_SUITE}'"))
+            continue
+        group = document.get("group")
+        entries = document.get("vectors")
+        if not isinstance(group, str) or not group or not isinstance(entries, list) or not entries:
+            suite_errors.append(Issue("CON-14", f"{path.name}: 'group' and a non-empty 'vectors' array are required"))
+            continue
+        base = document.get("base")
+
+        for position, entry in enumerate(entries):
+            label = f"{path.name}: vectors[{position}]"
+            if not isinstance(entry, dict):
+                suite_errors.append(Issue("CON-15", f"{label} must be an object"))
+                continue
+
+            name = entry.get("name")
+            if not isinstance(name, str) or not name:
+                suite_errors.append(Issue("CON-15", f"{label} needs a non-empty 'name'"))
+                continue
+            if name in seen_names:
+                suite_errors.append(Issue("CON-18", f"{path.name}: duplicate vector name '{name}'"))
+                continue
+            seen_names.add(name)
+
+            class_name = entry.get("class")
+            if class_name not in CONFORMANCE_CLASSES:
+                suite_errors.append(Issue("CON-15", f"{name}: 'class' must be one of {sorted(CONFORMANCE_CLASSES)}"))
+                continue
+
+            kind = entry.get("kind", "record")
+            if kind not in VECTOR_KINDS:
+                suite_errors.append(Issue("CON-22", f"{name}: 'kind' must be one of {sorted(VECTOR_KINDS)}"))
+                continue
+
+            expect = entry.get("expect")
+            if not isinstance(expect, dict):
+                suite_errors.append(Issue("CON-15", f"{name}: 'expect' must be an object"))
+                continue
+
+            rules = entry.get("rules", [])
+            if not isinstance(rules, list) or not all(isinstance(rule, str) for rule in rules):
+                suite_errors.append(Issue("CON-15", f"{name}: 'rules' must be an array of rule identifiers"))
+                continue
+
+            vector = Vector(name=name, group=group, class_name=class_name, kind=kind, source=path, rules=list(rules), expect=expect)
+
+            if kind == "graph":
+                records = entry.get("records")
+                if not isinstance(records, list) or not records or not all(isinstance(item, dict) for item in records):
+                    suite_errors.append(Issue("CON-20", f"{name}: a graph vector needs a non-empty 'records' array"))
+                    continue
+                if not isinstance(expect.get("acyclic"), bool):
+                    suite_errors.append(Issue("CON-20", f"{name}: a graph vector needs 'expect.acyclic' as a boolean"))
+                    continue
+                vector.records = records
+            elif kind == "jcs":
+                if "record" not in entry or not isinstance(entry["record"], dict):
+                    suite_errors.append(Issue("CON-21", f"{name}: a jcs vector needs a complete 'record' object"))
+                    continue
+                if not isinstance(expect.get("jcs"), str):
+                    suite_errors.append(Issue("CON-21", f"{name}: a jcs vector needs 'expect.jcs' as a string"))
+                    continue
+                vector.record = entry["record"]
+            else:
+                if "record" in entry:
+                    vector.record = entry["record"]
+                elif "patch" in entry and isinstance(base, dict) and isinstance(entry["patch"], dict):
+                    vector.record = {**base, **entry["patch"]}
+                else:
+                    suite_errors.append(Issue("CON-16", f"{name}: needs 'record', or 'patch' in a file with 'base'"))
+                    continue
+                if not isinstance(expect.get("valid"), bool):
+                    suite_errors.append(Issue("CON-17", f"{name}: 'expect.valid' must be a boolean"))
+                    continue
+                if expect["valid"] is False and not (
+                    isinstance(expect.get("rules"), list) and expect["rules"]
+                ):
+                    suite_errors.append(Issue("CON-17", f"{name}: a reject vector needs a non-empty 'expect.rules'"))
+                    continue
+
+            artifact = entry.get("artifact")
+            if artifact is not None:
+                if not isinstance(artifact, str):
+                    suite_errors.append(Issue("CON-19", f"{name}: 'artifact' must be a path string"))
+                    continue
+                resolved = (path.parent / artifact).resolve()
+                if not resolved.is_file():
+                    suite_errors.append(Issue("CON-19", f"{name}: artifact fixture not found at {resolved}"))
+                    continue
+                if entry.get("fixture") is True:
+                    declared = vector.record.get("artifact") if isinstance(vector.record, dict) else None
+                    if not isinstance(declared, dict) or not isinstance(declared.get("digest"), str):
+                        suite_errors.append(Issue("CON-19", f"{name}: a fixture vector needs record.artifact.digest"))
+                        continue
+                    actual = file_digest(resolved)
+                    if actual != declared["digest"]:
+                        suite_errors.append(
+                            Issue("CON-19", f"{name}: stale fixture — record says {declared['digest']}, {resolved.name} is {actual}")
+                        )
+                        continue
+                    size = declared.get("size")
+                    if isinstance(size, int) and not isinstance(size, bool) and size != resolved.stat().st_size:
+                        suite_errors.append(
+                            Issue("CON-19", f"{name}: stale fixture — record says {size} bytes, {resolved.name} is {resolved.stat().st_size}")
+                        )
+                        continue
+                elif "fixture" in entry:
+                    suite_errors.append(Issue("CON-19", f"{name}: 'fixture' must be a boolean"))
+                    continue
+                vector.artifact = resolved
+
+            vectors.append(vector)
+
+    return vectors, suite_errors
+
+
+def run_vector(vector: Vector) -> list[Issue]:
+    """Return the findings that make a vector fail; an empty list means it passed."""
+    if vector.kind == "graph":
+        _edges, cycles = build_graph(vector.records)
+        expected_acyclic = bool(vector.expect["acyclic"])
+        if expected_acyclic and cycles:
+            return [Issue("LIN-7", f"expected an acyclic graph, found a cycle: {cycles[0]}")]
+        if not expected_acyclic and not cycles:
+            return [Issue("LIN-7", "expected a cycle, found an acyclic graph")]
+        return []
+
+    if vector.kind == "jcs":
+        payload = canonicalise(vector.record).decode("utf-8")
+        if payload != vector.expect["jcs"]:
+            return [Issue("ATT-6", f"canonical form is {payload!r}, expected {vector.expect['jcs']!r}")]
+        return []
+
+    report = validate_record(vector.record, vector.artifact)
+    if vector.expect["valid"] is True:
+        return list(report.errors)
+
+    cited = {issue.rule for issue in report.errors}
+    if not cited:
+        return [Issue("CON-9", "expected a rejection, the record was accepted")]
+    expected_rules = set(vector.expect.get("rules") or [])
+    if not cited & expected_rules:
+        return [Issue("CON-10", f"rejected citing {sorted(cited)}, expected at least one of {sorted(expected_rules)}")]
+    return []
+
+
+def load_exemptions(path: Path) -> tuple[dict[str, str], list[Issue]]:
+    """Read spec/vectors/exemptions.json (CON-24, CON-25)."""
+    if not path.is_file():
+        return {}, [Issue("CON-24", f"coverage requires an exemption file at {path}")]
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        return {}, [Issue("CON-24", f"{path.name}: not valid JSON — {error}")]
+    if not isinstance(document, dict) or document.get("suite") != VECTOR_SUITE:
+        return {}, [Issue("CON-24", f"{path.name}: 'suite' must be '{VECTOR_SUITE}'")]
+    rules = document.get("rules")
+    if not isinstance(rules, dict):
+        return {}, [Issue("CON-24", f"{path.name}: 'rules' must be an object mapping rule to reason")]
+
+    exemptions: dict[str, str] = {}
+    issues: list[Issue] = []
+    for rule, reason in rules.items():
+        if not isinstance(reason, str) or len(reason.strip()) < 20:
+            issues.append(Issue("CON-25", f"{rule}: an exemption needs a reason explaining why no record can decide it"))
+            continue
+        exemptions[rule] = reason
+    return exemptions, issues
+
+
+def spec_rule_ids(spec_dir: Path) -> set[str]:
+    """Every record rule identifier defined in spec/00..06 (CON rules excluded)."""
+    identifiers: set[str] = set()
+    for path in sorted(spec_dir.glob("*.md")):
+        identifiers.update(match.group(0) for match in RULE_PATTERN.finditer(path.read_text(encoding="utf-8")))
+    return identifiers
+
+
+def coverage_report(vectors: list[Vector], spec_dir: Path, exemptions: dict[str, str]) -> tuple[list[str], list[Issue]]:
+    """Return (summary lines, failures) for CON-24..CON-26.
+
+    Only the record rule families count: CON rules describe the suite and the
+    act of conformance, so they are verified by this command rather than by a
+    vector that could never decide them.
+    """
+    defined = spec_rule_ids(spec_dir)
+    referenced = {rule for vector in vectors for rule in vector.rules if RULE_PATTERN.fullmatch(rule)}
+    uncovered = sorted(defined - referenced - set(exemptions))
+    stale_exemptions = sorted(set(exemptions) - defined)
+    undefined_references = sorted(referenced - defined)
+
+    issues: list[Issue] = []
+    if uncovered:
+        issues.append(Issue("CON-24", f"rules with no vector and no exemption: {', '.join(uncovered)}"))
+    if stale_exemptions:
+        issues.append(Issue("CON-26", f"exemptions for rules that do not exist: {', '.join(stale_exemptions)}"))
+    if undefined_references:
+        issues.append(Issue("CON-26", f"vectors cite rules that the specification does not define: {', '.join(undefined_references)}"))
+
+    covered = len(defined & referenced)
+    summary = [
+        f"coverage   {covered}/{len(defined)} rules referenced, {len(set(exemptions) & defined)} exempt, {len(uncovered)} uncovered"
+    ]
+    return summary, issues
+
+
+def command_conform(arguments: argparse.Namespace) -> int:
+    directory = Path(arguments.vectors).resolve() if arguments.vectors else default_vectors_dir()
+    vectors, suite_errors = load_vectors(directory)
+
+    if not suite_errors and not vectors:
+        suite_errors.append(Issue("CON-14", f"no vectors found in {directory}"))
+
+    if suite_errors:
+        print(f"suite      {directory}", file=sys.stderr)
+        for issue in suite_errors:
+            print(f"SUITE      {issue}", file=sys.stderr)
+        return 2
+
+    failures: list[tuple[Vector, list[Issue]]] = []
+    for vector in vectors:
+        findings = run_vector(vector)
+        if findings:
+            failures.append((vector, findings))
+
+    accepts = sum(1 for vector in vectors if vector.kind == "record" and vector.expect.get("valid") is True)
+    rejections = sum(1 for vector in vectors if vector.kind == "record" and vector.expect.get("valid") is False)
+    others = len(vectors) - accepts - rejections
+
+    print(f"suite      {VECTOR_SUITE} from {directory}")
+    print(f"vectors    {len(vectors)} total ({accepts} accept, {rejections} reject, {others} graph/jcs)")
+    print(f"result     {'PASS' if not failures else 'FAIL'} {len(vectors) - len(failures)}/{len(vectors)}")
+    for vector, findings in failures:
+        for finding in findings:
+            print(f"FAIL       {vector.name}: {finding}")
+    if arguments.verbose and failures:
+        for vector, _findings in failures:
+            print(f"           {vector.name} ({vector.group}, class {vector.class_name}, {vector.source.name})")
+
+    status = 1 if failures else 0
+
+    if arguments.coverage:
+        exemptions, exemption_issues = load_exemptions(directory / "exemptions.json")
+        summary, coverage_issues = coverage_report(vectors, directory.parent, exemptions)
+        print("\n".join(summary))
+        for issue in exemption_issues + coverage_issues:
+            print(f"COVERAGE   {issue}", file=sys.stderr)
+        if exemption_issues or coverage_issues:
+            status = 1
+
+    return status
+
+
+# --------------------------------------------------------------------------- #
 # Commands
 # --------------------------------------------------------------------------- #
 
@@ -526,14 +935,26 @@ def command_stamp(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def satisfied_classes(record: dict[str, Any]) -> list[str]:
+    """The classes a validated record satisfies, derived from its members (CON-7)."""
+    classes = ["core"]
+    for class_name in ("lineage", "recipe", "attestation"):
+        if record.get(class_name) is not None:
+            classes.append(class_name)
+    return classes
+
+
 def command_validate(arguments: argparse.Namespace) -> int:
     record = load_record(Path(arguments.record))
     artifact = Path(arguments.artifact) if arguments.artifact else None
     report = validate_record(record, artifact)
-    for issue in report.issues:
+    for issue in report.warnings:
+        print(f"warning {issue}", file=sys.stderr)
+    for issue in report.errors:
         print(issue, file=sys.stderr)
     if report.ok:
-        print(f"OK — record conforms to Variorum {record.get('variorum')} (core)")
+        classes = ", ".join(satisfied_classes(record)) if isinstance(record, dict) else "core"
+        print(f"OK — record conforms to Variorum {record.get('variorum')} ({classes})")
         return 0
     return 1
 
@@ -584,7 +1005,9 @@ def command_verify(arguments: argparse.Namespace) -> int:
     record = load_record(Path(arguments.record))
     report = validate_record(record, Path(arguments.artifact) if arguments.artifact else None)
     report.issues.extend(verify_attestation(record).issues)
-    for issue in report.issues:
+    for issue in report.warnings:
+        print(f"warning {issue}", file=sys.stderr)
+    for issue in report.errors:
         print(issue, file=sys.stderr)
     return 0 if report.ok else 1
 
@@ -613,6 +1036,12 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("record")
     validate_parser.add_argument("--artifact", help="also verify the digest against this file")
     validate_parser.set_defaults(handler=command_validate)
+
+    conform_parser = subparsers.add_parser("conform", help="run the conformance vector suite")
+    conform_parser.add_argument("--vectors", help="directory holding the vector files (default: spec/vectors)")
+    conform_parser.add_argument("--coverage", action="store_true", help="report which rules the suite exercises or exempts")
+    conform_parser.add_argument("--verbose", action="store_true", help="print the provenance of each failing vector")
+    conform_parser.set_defaults(handler=command_conform)
 
     show_parser = subparsers.add_parser("show", help="print a human summary of a record")
     show_parser.add_argument("record")

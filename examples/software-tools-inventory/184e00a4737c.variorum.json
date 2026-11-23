@@ -58,6 +58,6 @@
     ]
   },
   "extensions": {
-    "variorum:conformance": ["core", "lineage", "recipe"]
+    "variorum:conformance": ["core", "recipe"]
   }
 }

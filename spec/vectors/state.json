@@ -1,0 +1,290 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "state",
+  "description": "Rules from spec/05-state.md: lifecycle values, contiguous transitions, legal edges.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "state/member-must-be-object",
+      "class": "core",
+      "description": "A lifecycle is an object, not a bare state name.",
+      "rules": ["STA-1"],
+      "patch": { "state": "approved" },
+      "expect": { "valid": false, "rules": ["STA-1"] }
+    },
+    {
+      "name": "state/current-required",
+      "class": "core",
+      "description": "A state object without a current state says nothing.",
+      "rules": ["STA-2"],
+      "patch": { "state": { "transitions": [] } },
+      "expect": { "valid": false, "rules": ["STA-2"] }
+    },
+    {
+      "name": "state/current-vocabulary",
+      "class": "core",
+      "description": "'final' is not one of the seven states.",
+      "rules": ["STA-2"],
+      "patch": { "state": { "current": "final", "transitions": [] } },
+      "expect": { "valid": false, "rules": ["STA-2"] }
+    },
+    {
+      "name": "state/transitions-required",
+      "class": "core",
+      "description": "The transitions array must be present; it may be empty.",
+      "rules": ["STA-3"],
+      "patch": { "state": { "current": "draft" } },
+      "expect": { "valid": false, "rules": ["STA-3"] }
+    },
+    {
+      "name": "state/transitions-array",
+      "class": "core",
+      "description": "A map is not a transition list.",
+      "rules": ["STA-3"],
+      "patch": { "state": { "current": "draft", "transitions": {} } },
+      "expect": { "valid": false, "rules": ["STA-3"] }
+    },
+    {
+      "name": "state/transition-timestamp-required",
+      "class": "core",
+      "description": "A transition without a timestamp cannot be ordered against anything.",
+      "rules": ["STA-4"],
+      "patch": {
+        "state": {
+          "current": "candidate",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "cazucito", "kind": "human" } }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-4"] }
+    },
+    {
+      "name": "state/transition-timestamp-offset",
+      "class": "core",
+      "description": "Timestamps carry an explicit offset (STA-5, restating CORE-6).",
+      "rules": ["STA-5"],
+      "patch": {
+        "state": {
+          "current": "candidate",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "cazucito" }, "at": "2026-11-20T14:42:28" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-5"] }
+    },
+    {
+      "name": "state/transition-actor-required",
+      "class": "core",
+      "description": "Who decided is part of the record, not optional context (STA-4); STA-6 governs the shape of the actor once it is present.",
+      "rules": ["STA-4", "STA-6"],
+      "patch": {
+        "state": {
+          "current": "candidate",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "at": "2026-11-20T14:42:28-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-4"] }
+    },
+    {
+      "name": "state/transition-actor-shape",
+      "class": "core",
+      "description": "A name is not an actor object.",
+      "rules": ["STA-6"],
+      "patch": {
+        "state": {
+          "current": "candidate",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": "cazucito", "at": "2026-11-20T14:42:28-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-6"] }
+    },
+    {
+      "name": "state/current-must-equal-last-transition",
+      "class": "core",
+      "description": "A current state that no transition reached is a claim without a decision.",
+      "rules": ["STA-7"],
+      "patch": {
+        "state": {
+          "current": "published",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "a" }, "at": "2026-11-20T14:42:28-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-7"] }
+    },
+    {
+      "name": "state/empty-transitions-mean-draft",
+      "class": "core",
+      "description": "With no transitions the only honest current state is draft.",
+      "rules": ["STA-7"],
+      "patch": { "state": { "current": "candidate", "transitions": [] } },
+      "expect": { "valid": false, "rules": ["STA-7"] }
+    },
+    {
+      "name": "state/transitions-contiguous",
+      "class": "core",
+      "description": "A gap between transitions is invalid; the second must start where the first ended.",
+      "rules": ["STA-8"],
+      "patch": {
+        "state": {
+          "current": "published",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "a" }, "at": "2026-11-20T14:42:28-06:00" },
+            { "from": "approved", "to": "published", "actor": { "name": "a" }, "at": "2026-11-20T16:00:00-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-8"] }
+    },
+    {
+      "name": "state/first-transition-starts-at-draft",
+      "class": "core",
+      "description": "Every lifecycle begins at draft (STA-9).",
+      "rules": ["STA-9"],
+      "patch": {
+        "state": {
+          "current": "approved",
+          "transitions": [
+            { "from": "candidate", "to": "approved", "actor": { "name": "a" }, "at": "2026-11-20T14:42:28-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-9"] }
+    },
+    {
+      "name": "state/illegal-transition",
+      "class": "core",
+      "description": "draft cannot jump to approved; a candidate must be proposed first.",
+      "rules": ["STA-10"],
+      "patch": {
+        "state": {
+          "current": "approved",
+          "transitions": [
+            { "from": "draft", "to": "approved", "actor": { "name": "a" }, "at": "2026-11-20T14:42:28-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-10"] }
+    },
+    {
+      "name": "state/rejected-is-terminal",
+      "class": "core",
+      "description": "A rejected take stays rejected; re-attempting it produces a sibling artifact (STA-11).",
+      "rules": ["STA-11"],
+      "patch": {
+        "state": {
+          "current": "rejected",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "hermes-agent", "kind": "software" }, "at": "2026-11-20T08:12:00-06:00" },
+            { "from": "candidate", "to": "rejected", "actor": { "name": "cazucito", "kind": "human" }, "at": "2026-11-20T08:35:00-06:00", "reason": "Hand enters frame from the wrong side." }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "state/cannot-revive-rejected",
+      "class": "core",
+      "description": "rejected -> approved is not a legal edge.",
+      "rules": ["STA-10", "STA-11"],
+      "patch": {
+        "state": {
+          "current": "approved",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "a" }, "at": "2026-11-20T08:12:00-06:00" },
+            { "from": "candidate", "to": "rejected", "actor": { "name": "a" }, "at": "2026-11-20T08:35:00-06:00" },
+            { "from": "rejected", "to": "approved", "actor": { "name": "a" }, "at": "2026-11-20T09:00:00-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-10"] }
+    },
+    {
+      "name": "state/superseded-requires-successor",
+      "class": "core",
+      "description": "Supersession names the artifact that replaced this one.",
+      "rules": ["STA-12"],
+      "patch": {
+        "state": {
+          "current": "superseded",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "a" }, "at": "2026-11-20T08:12:00-06:00" },
+            { "from": "candidate", "to": "approved", "actor": { "name": "a" }, "at": "2026-11-20T09:00:00-06:00" },
+            { "from": "approved", "to": "superseded", "actor": { "name": "a" }, "at": "2026-11-21T09:00:00-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-12"] }
+    },
+    {
+      "name": "state/successor-must-be-identifier",
+      "class": "core",
+      "description": "A successor is referenced by Variorum id, not by filename.",
+      "rules": ["STA-12"],
+      "patch": {
+        "state": {
+          "current": "superseded",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "a" }, "at": "2026-11-20T08:12:00-06:00" },
+            { "from": "candidate", "to": "approved", "actor": { "name": "a" }, "at": "2026-11-20T09:00:00-06:00" },
+            { "from": "approved", "to": "superseded", "actor": { "name": "a" }, "at": "2026-11-21T09:00:00-06:00" }
+          ],
+          "supersededBy": "final_v2.mp4"
+        }
+      },
+      "expect": { "valid": false, "rules": ["STA-12"] }
+    },
+    {
+      "name": "state/superseded-accepted",
+      "class": "core",
+      "description": "A superseded record that names its successor and keeps its history is valid.",
+      "rules": ["STA-12"],
+      "patch": {
+        "state": {
+          "current": "superseded",
+          "transitions": [
+            { "from": "draft", "to": "candidate", "actor": { "name": "a" }, "at": "2026-11-20T08:12:00-06:00" },
+            { "from": "candidate", "to": "approved", "actor": { "name": "a" }, "at": "2026-11-20T09:00:00-06:00" },
+            { "from": "approved", "to": "superseded", "actor": { "name": "a" }, "at": "2026-11-21T09:00:00-06:00" }
+          ],
+          "supersededBy": "urn:variorum:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "state/archived-can-return-to-draft",
+      "class": "core",
+      "description": "Archived is not terminal: an artifact can be taken up again (STA-10 table).",
+      "rules": ["STA-10"],
+      "patch": {
+        "state": {
+          "current": "draft",
+          "transitions": [
+            { "from": "draft", "to": "archived", "actor": { "name": "a" }, "at": "2026-11-20T08:12:00-06:00" },
+            { "from": "archived", "to": "draft", "actor": { "name": "a" }, "at": "2026-11-21T09:00:00-06:00" }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    }
+  ]
+}

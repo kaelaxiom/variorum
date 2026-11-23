@@ -1,0 +1,157 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "identity",
+  "description": "Rules from spec/01-identity.md, including digest checks against real fixture files.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "identity/artifact-required",
+      "class": "core",
+      "description": "Without 'artifact' there is no identity at all.",
+      "rules": ["ID-1"],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "scheme": { "name": "semver", "version": "1.4.2" },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": { "valid": false, "rules": ["ID-1"] }
+    },
+    {
+      "name": "identity/digest-format",
+      "class": "core",
+      "description": "Digests are sha256 followed by 64 lowercase hexadecimal characters.",
+      "rules": ["ID-2"],
+      "patch": {
+        "artifact": { "digest": "sha256:A370E4F11B0E5927403319B7884BA09608EB03C3F0C3F55723235DF8BEF14F7F", "size": 111 }
+      },
+      "expect": { "valid": false, "rules": ["ID-2"] }
+    },
+    {
+      "name": "identity/digest-matches-fixture",
+      "class": "core",
+      "description": "The digest of fixtures/hello.txt is the one the record declares.",
+      "rules": ["ID-3"],
+      "artifact": "fixtures/hello.txt",
+      "fixture": true,
+      "patch": {},
+      "expect": { "valid": true }
+    },
+    {
+      "name": "identity/digest-mismatch",
+      "class": "core",
+      "description": "The record claims hello.txt but is checked against other.txt.",
+      "rules": ["ID-3"],
+      "artifact": "fixtures/other.txt",
+      "patch": {},
+      "expect": { "valid": false, "rules": ["ID-3"] }
+    },
+    {
+      "name": "identity/size-mismatch",
+      "class": "core",
+      "description": "A size that disagrees with the file is a false claim about the artifact.",
+      "rules": ["ID-4"],
+      "artifact": "fixtures/hello.txt",
+      "patch": {
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 112,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        }
+      },
+      "expect": { "valid": false, "rules": ["ID-4"] }
+    },
+    {
+      "name": "identity/size-non-negative",
+      "class": "core",
+      "description": "A negative length is not a length.",
+      "rules": ["ID-4"],
+      "patch": {
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": -1
+        }
+      },
+      "expect": { "valid": false, "rules": ["ID-4"] }
+    },
+    {
+      "name": "identity/media-type-syntax",
+      "class": "core",
+      "description": "A media type without a subtype does not follow RFC 2046.",
+      "rules": ["ID-5"],
+      "patch": {
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "mediaType": "video"
+        }
+      },
+      "expect": { "valid": false, "rules": ["ID-5"] }
+    },
+    {
+      "name": "identity/id-format",
+      "class": "core",
+      "description": "The identifier is a urn in the variorum namespace, over sha256.",
+      "rules": ["ID-7"],
+      "patch": { "id": "urn:variorum:md5:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f" },
+      "expect": { "valid": false, "rules": ["ID-7"] }
+    },
+    {
+      "name": "identity/id-derived-from-digest",
+      "class": "core",
+      "description": "A well-formed identifier that disagrees with the digest is a lie about which bytes this is.",
+      "rules": ["ID-8"],
+      "patch": { "id": "urn:variorum:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+      "expect": { "valid": false, "rules": ["ID-8"] }
+    },
+    {
+      "name": "identity/producer-requires-name",
+      "class": "core",
+      "description": "An actor without a name identifies nobody.",
+      "rules": ["ID-10"],
+      "patch": { "producer": { "kind": "human" } },
+      "expect": { "valid": false, "rules": ["ID-10"] }
+    },
+    {
+      "name": "identity/producer-kind-vocabulary",
+      "class": "core",
+      "description": "Producer kinds are human, organization or software.",
+      "rules": ["ID-11"],
+      "patch": { "producer": { "name": "someone", "kind": "robot" } },
+      "expect": { "valid": false, "rules": ["ID-11"] }
+    },
+    {
+      "name": "identity/software-producer-name-recommended",
+      "class": "core",
+      "description": "Naming the software is a SHOULD (ID-12); omitting it must not invalidate the record.",
+      "rules": ["ID-12"],
+      "patch": { "producer": { "name": "hermes-agent", "kind": "software" } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "identity/producer-accepted",
+      "class": "core",
+      "description": "A complete producer object is valid and does not affect identity.",
+      "rules": ["ID-10", "ID-11", "ID-12"],
+      "patch": {
+        "producer": {
+          "name": "hermes-agent",
+          "kind": "software",
+          "software": { "name": "hermes", "version": "0.21.7" }
+        }
+      },
+      "expect": { "valid": true }
+    }
+  ]
+}

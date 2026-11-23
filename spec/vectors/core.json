@@ -1,0 +1,111 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "core",
+  "description": "Rules from spec/00-overview.md §5-§7: record shape, version, timestamps, extensions.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "core/minimal-record-accepted",
+      "class": "core",
+      "description": "Only the required members are present; the record is valid and declares no lifecycle.",
+      "rules": ["CORE-1", "CORE-2", "CORE-5", "ID-1", "ID-2", "ID-4", "ID-5", "ID-7", "ID-8", "SCH-1", "SCH-2", "SCH-3", "STA-15"],
+      "patch": {},
+      "expect": { "valid": true }
+    },
+    {
+      "name": "core/unknown-members-accepted",
+      "class": "core",
+      "description": "A consumer must ignore members it does not recognise.",
+      "rules": ["CORE-3"],
+      "patch": {
+        "org.example:future": { "anything": true },
+        "org.example:note": "written by a newer minor version"
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "core/record-must-be-object",
+      "class": "core",
+      "description": "A JSON array is not a record.",
+      "rules": ["CORE-1"],
+      "record": ["variorum", "0.1"],
+      "expect": { "valid": false, "rules": ["CORE-1"] }
+    },
+    {
+      "name": "core/version-is-major-minor",
+      "class": "core",
+      "description": "Three components are not a record format version.",
+      "rules": ["CORE-2"],
+      "patch": { "variorum": "0.1.0" },
+      "expect": { "valid": false, "rules": ["CORE-2"] }
+    },
+    {
+      "name": "core/version-required",
+      "class": "core",
+      "description": "A record without 'variorum' cannot be interpreted.",
+      "rules": ["CORE-2"],
+      "record": {
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": { "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f" },
+        "scheme": { "name": "semver", "version": "1.4.2" },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": { "valid": false, "rules": ["CORE-2"] }
+    },
+    {
+      "name": "core/created-requires-offset",
+      "class": "core",
+      "description": "A local time without an offset is ambiguous and therefore invalid.",
+      "rules": ["CORE-5"],
+      "patch": { "created": "2026-11-22T12:00:00" },
+      "expect": { "valid": false, "rules": ["CORE-5"] }
+    },
+    {
+      "name": "core/generated-at-requires-offset",
+      "class": "core",
+      "description": "CORE-6 applies to every timestamp, including recipe.generatedAt.",
+      "rules": ["CORE-6"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" },
+          "prompt": "A static camera.",
+          "generatedAt": "2026-11-22T12:00:00"
+        }
+      },
+      "expect": { "valid": false, "rules": ["CORE-6"] }
+    },
+    {
+      "name": "core/extensions-must-be-object",
+      "class": "core",
+      "description": "Extensions are a map from identifier to payload.",
+      "rules": ["CORE-9"],
+      "patch": { "extensions": ["variorum:conformance"] },
+      "expect": { "valid": false, "rules": ["CORE-9"] }
+    },
+    {
+      "name": "core/unnamespaced-extension-key-accepted",
+      "class": "core",
+      "description": "Namespacing an extension key is a SHOULD (CORE-10); violating it must not invalidate the record.",
+      "rules": ["CORE-10"],
+      "patch": {
+        "extensions": {
+          "variorum:conformance": ["core"],
+          "note": "an un-namespaced key, which is a warning and not an error"
+        }
+      },
+      "expect": { "valid": true }
+    }
+  ]
+}

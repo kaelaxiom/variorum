@@ -38,7 +38,11 @@ The following names are reserved and carry the stated meaning. The list is infor
 | `custom` | A project-specific label with no shared semantics | Project documentation |
 | `none` | The project assigns no version label | — |
 
-Custom schemes outside this list MUST use the `x-` form: `x-du-vortoj-dv`.
+Custom schemes outside this list SHOULD use the `x-` form: `x-du-vortoj-dv`.
+
+**SCH-10.** A scheme name that is not in the reserved table SHOULD carry the `x-` prefix, so that a name a project invents today does not collide with a name this table reserves tomorrow.
+
+The prefix is a recommendation, not a requirement: a lowercase name outside the table is opaque to every consumer and valid (SCH-2). A consumer that does not recognise `dv` MUST NOT reject the record, and MUST NOT guess what it means.
 
 ## 2.3 Ordering is not Variorum's business
 

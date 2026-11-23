@@ -12,10 +12,10 @@
 
 ## Phase 1 — Testability
 
-- [ ] `spec/07-conformance.md` defining conformance classes and required behaviour
-- [ ] `spec/vectors/` — machine-readable accept/reject vectors
-- [ ] `variorum conform` command running the vectors
-- [ ] CI: run `conform` on every push (GitHub Actions, no dependencies)
+- [x] `spec/07-conformance.md` defining conformance classes and required behaviour
+- [x] `spec/vectors/` — machine-readable accept/reject vectors
+- [x] `variorum conform` command running the vectors
+- [x] CI: run `conform` on every push (GitHub Actions, no dependencies)
 
 ## Phase 2 — Interoperability
 

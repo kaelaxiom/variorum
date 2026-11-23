@@ -120,7 +120,7 @@ A record is a JSON object with the following members. Unknown members MUST be ig
 
 ## 6. Conformance classes
 
-Implementations declare conformance per class. A record is described by the highest class it satisfies.
+Implementations declare conformance per class. A record is described by the highest class it satisfies. [07-conformance.md](07-conformance.md) makes both statements testable: it defines what each class requires, how a declaration is checked, and the vector suite an implementation must pass.
 
 ### 6.1 `core`
 
@@ -143,6 +143,8 @@ Adds `attestation`. The record is signed. Establishes who asserted the record's 
 **CORE-7.** A producer SHOULD declare the classes it satisfies in `extensions["variorum:conformance"]` as an array of class names.
 
 **CORE-8.** A consumer MUST validate the members it understands and MUST NOT infer the absence of a member from the absence of a conformance declaration.
+
+A declaration is a claim, and a claim that can be false is worse than silence. `CON-5` bounds its form to known class names, and `CON-6` requires every declared class other than `core` to be backed by its member — a record declaring `lineage` must carry `lineage`. Under-declaring remains a SHOULD violation.
 
 ## 7. Extensions
 

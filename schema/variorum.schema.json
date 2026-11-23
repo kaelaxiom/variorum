@@ -46,7 +46,8 @@
           "properties": {
             "name": {
               "type": "string",
-              "pattern": "^(semver|calver|pep440|debian|rpm|maven|nuget|date|sequence|custom|x-[a-z0-9-]+)$"
+              "pattern": "^[a-z][a-z0-9-]*$",
+              "description": "SCH-2: a lowercase name. The reserved table in spec/02-scheme.md is informative; any other name is opaque to consumers."
             },
             "version": { "type": "string", "minLength": 1 },
             "authority": { "type": "string", "format": "uri", "pattern": "^[a-z][a-z0-9+.-]*://" },
@@ -185,7 +186,17 @@
     },
     "extensions": {
       "type": "object",
-      "propertyNames": { "pattern": "^[a-zA-Z0-9.-]+:[a-zA-Z0-9._-]+$" }
+      "propertyNames": {
+        "pattern": "^([A-Za-z0-9.-]+:)?[A-Za-z0-9._-]+$",
+        "description": "CORE-10 recommends a '<prefix>:<name>' form but does not require it; the prefix is optional in this pattern so that a warning is not turned into a schema rejection."
+      },
+      "properties": {
+        "variorum:conformance": {
+          "type": "array",
+          "items": { "enum": ["core", "lineage", "recipe", "attestation"] },
+          "description": "CON-5: the classes the record claims. CON-6 requires each declared class other than core to be backed by its member."
+        }
+      }
     }
   },
   "allOf": [

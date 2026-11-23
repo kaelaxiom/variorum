@@ -1,0 +1,189 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "lineage",
+  "description": "Rules from spec/03-lineage.md: parent references, relations and acyclicity.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "lineage/member-must-be-object",
+      "class": "lineage",
+      "description": "Lineage is an object with a parents array, not a bare list.",
+      "rules": ["LIN-1"],
+      "patch": { "lineage": [] },
+      "expect": { "valid": false, "rules": ["LIN-1"] }
+    },
+    {
+      "name": "lineage/parents-required",
+      "class": "lineage",
+      "description": "An empty lineage object says nothing and is not a lineage.",
+      "rules": ["LIN-2"],
+      "patch": { "lineage": {} },
+      "expect": { "valid": false, "rules": ["LIN-2"] }
+    },
+    {
+      "name": "lineage/parents-not-empty",
+      "class": "lineage",
+      "description": "An empty parents array is invalid; omit the member instead.",
+      "rules": ["LIN-2"],
+      "patch": { "lineage": { "parents": [] } },
+      "expect": { "valid": false, "rules": ["LIN-2"] }
+    },
+    {
+      "name": "lineage/parent-id-format",
+      "class": "lineage",
+      "description": "Parents are referenced by Variorum identifier, not by digest or path.",
+      "rules": ["LIN-3"],
+      "patch": {
+        "lineage": { "parents": [{ "id": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f", "relation": "revision" }] }
+      },
+      "expect": { "valid": false, "rules": ["LIN-3"] }
+    },
+    {
+      "name": "lineage/relation-vocabulary",
+      "class": "lineage",
+      "description": "'upgrade' is a judgement about versions, not a derivation relation.",
+      "rules": ["LIN-4"],
+      "patch": {
+        "lineage": { "parents": [{ "id": "urn:variorum:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "relation": "upgrade" }] }
+      },
+      "expect": { "valid": false, "rules": ["LIN-4"] }
+    },
+    {
+      "name": "lineage/all-relations-accepted",
+      "class": "lineage",
+      "description": "The eight relations of §3.2 are all valid, including 'derivation' as the catch-all and 'transcode' as the way a work survives re-encoding.",
+      "rules": ["LIN-3", "LIN-4", "LIN-5", "LIN-8", "ID-16"],
+      "patch": {
+        "lineage": {
+          "parents": [
+            { "id": "urn:variorum:sha256:1111111111111111111111111111111111111111111111111111111111111111", "relation": "generation" },
+            { "id": "urn:variorum:sha256:2222222222222222222222222222222222222222222222222222222222222222", "relation": "revision" },
+            { "id": "urn:variorum:sha256:3333333333333333333333333333333333333333333333333333333333333333", "relation": "edit" },
+            { "id": "urn:variorum:sha256:4444444444444444444444444444444444444444444444444444444444444444", "relation": "render" },
+            { "id": "urn:variorum:sha256:5555555555555555555555555555555555555555555555555555555555555555", "relation": "transcode" },
+            { "id": "urn:variorum:sha256:6666666666666666666666666666666666666666666666666666666666666666", "relation": "fork" },
+            { "id": "urn:variorum:sha256:7777777777777777777777777777777777777777777777777777777777777777", "relation": "restore" },
+            { "id": "urn:variorum:sha256:8888888888888888888888888888888888888888888888888888888888888888", "relation": "derivation" }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "lineage/self-reference",
+      "class": "lineage",
+      "description": "A record cannot be its own parent.",
+      "rules": ["LIN-5"],
+      "patch": {
+        "lineage": {
+          "parents": [
+            { "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f", "relation": "revision" }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["LIN-5"] }
+    },
+    {
+      "name": "lineage/unresolvable-parent-accepted",
+      "class": "lineage",
+      "description": "Records travel with artifacts; a parent whose record is missing is not an error.",
+      "rules": ["LIN-8"],
+      "patch": {
+        "lineage": {
+          "parents": [
+            { "id": "urn:variorum:sha256:9999999999999999999999999999999999999999999999999999999999999999", "relation": "revision", "note": "the record for this parent lives in another archive" }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "lineage/revision-siblings-accepted",
+      "class": "lineage",
+      "description": "A revision references the take it re-attempts; siblings are not a chain.",
+      "rules": ["LIN-6"],
+      "patch": {
+        "lineage": {
+          "parents": [
+            { "id": "urn:variorum:sha256:1212121212121212121212121212121212121212121212121212121212121212", "relation": "revision" }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "lineage/acyclic-graph-accepted",
+      "kind": "graph",
+      "class": "lineage",
+      "description": "A parent and its child resolve into a finite graph.",
+      "rules": ["LIN-7"],
+      "records": [
+        {
+          "variorum": "0.1",
+          "id": "urn:variorum:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "artifact": { "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+          "scheme": { "name": "semver", "version": "1.0.0" },
+          "created": "2026-11-22T12:00:00-06:00"
+        },
+        {
+          "variorum": "0.1",
+          "id": "urn:variorum:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "artifact": { "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+          "scheme": { "name": "semver", "version": "1.0.1" },
+          "created": "2026-11-22T12:00:00-06:00",
+          "lineage": {
+            "parents": [
+              { "id": "urn:variorum:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "relation": "revision" }
+            ]
+          }
+        }
+      ],
+      "expect": { "acyclic": true }
+    },
+    {
+      "name": "lineage/cycle-detected",
+      "kind": "graph",
+      "class": "lineage",
+      "description": "Two records that name each other as parent form a cycle and must be rejected.",
+      "rules": ["LIN-7"],
+      "records": [
+        {
+          "variorum": "0.1",
+          "id": "urn:variorum:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "artifact": { "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+          "scheme": { "name": "semver", "version": "1.0.0" },
+          "created": "2026-11-22T12:00:00-06:00",
+          "lineage": {
+            "parents": [
+              { "id": "urn:variorum:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "relation": "revision" }
+            ]
+          }
+        },
+        {
+          "variorum": "0.1",
+          "id": "urn:variorum:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "artifact": { "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+          "scheme": { "name": "semver", "version": "1.0.1" },
+          "created": "2026-11-22T12:00:00-06:00",
+          "lineage": {
+            "parents": [
+              { "id": "urn:variorum:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "relation": "revision" }
+            ]
+          }
+        }
+      ],
+      "expect": { "acyclic": false }
+    }
+  ]
+}

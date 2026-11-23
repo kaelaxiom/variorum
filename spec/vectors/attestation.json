@@ -1,0 +1,124 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "attestation",
+  "description": "Rules from spec/06-attestation.md: signature shape and the exact bytes a signature covers.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "attestation/member-shape",
+      "class": "attestation",
+      "description": "An attestation is an object or an array of objects; a bare string is neither.",
+      "rules": ["ATT-1"],
+      "patch": { "attestation": "signed by cazucito" },
+      "expect": { "valid": false, "rules": ["ATT-1"] }
+    },
+    {
+      "name": "attestation/empty-array",
+      "class": "attestation",
+      "description": "An empty array attests to nothing.",
+      "rules": ["ATT-1"],
+      "patch": { "attestation": [] },
+      "expect": { "valid": false, "rules": ["ATT-1"] }
+    },
+    {
+      "name": "attestation/algorithm-and-signature-required",
+      "class": "attestation",
+      "description": "An algorithm without a signature is a promise with no proof.",
+      "rules": ["ATT-2"],
+      "patch": { "attestation": { "algorithm": "ed25519" } },
+      "expect": { "valid": false, "rules": ["ATT-2"] }
+    },
+    {
+      "name": "attestation/signature-no-padding",
+      "class": "attestation",
+      "description": "base64url without padding: '=' is not permitted.",
+      "rules": ["ATT-3"],
+      "patch": { "attestation": { "algorithm": "ed25519", "signature": "MEUCIQDf3Xk=" } },
+      "expect": { "valid": false, "rules": ["ATT-3"] }
+    },
+    {
+      "name": "attestation/signature-base64url-alphabet",
+      "class": "attestation",
+      "description": "The standard base64 alphabet uses '+' and '/', which base64url replaces.",
+      "rules": ["ATT-3"],
+      "patch": { "attestation": { "algorithm": "ed25519", "signature": "MEUCIQ+/Df3Xk" } },
+      "expect": { "valid": false, "rules": ["ATT-3"] }
+    },
+    {
+      "name": "attestation/keyid-is-a-string",
+      "class": "attestation",
+      "description": "A key identifier is a label, not a number.",
+      "rules": ["ATT-4"],
+      "patch": { "attestation": { "algorithm": "ed25519", "signature": "MEUCIQDf3Xk", "keyid": 7 } },
+      "expect": { "valid": false, "rules": ["ATT-4"] }
+    },
+    {
+      "name": "attestation/algorithm-vocabulary",
+      "class": "attestation",
+      "description": "An algorithm outside the table is unsupported and must not be skipped silently.",
+      "rules": ["ATT-5"],
+      "patch": { "attestation": { "algorithm": "md5-hmac", "signature": "MEUCIQDf3Xk" } },
+      "expect": { "valid": false, "rules": ["ATT-5"] }
+    },
+    {
+      "name": "attestation/single-accepted",
+      "class": "attestation",
+      "description": "A well-formed ed25519 attestation with a key identifier.",
+      "rules": ["ATT-1", "ATT-2", "ATT-3", "ATT-4"],
+      "patch": {
+        "attestation": {
+          "algorithm": "ed25519",
+          "signature": "MEUCIQDf3Xk9aQz1sV7bNp0rT4uW8yZ2cE6gH5jK3mN1oP0q",
+          "keyid": "cazucito/2026-11"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "attestation/multiple-signatures-accepted",
+      "class": "attestation",
+      "description": "Two signers over the same canonical bytes are two entries in one array.",
+      "rules": ["ATT-1", "ATT-2"],
+      "patch": {
+        "attestation": [
+          { "algorithm": "ed25519", "signature": "MEUCIQDf3Xk9aQz1sV7bNp0rT4uW8yZ2cE6gH5jK3mN1oP0q", "keyid": "cazucito/2026-11" },
+          { "algorithm": "ecdsa-p256-sha256", "signature": "MEQCIBs7dR2kLp9xVn4mTz0aYb6cW1eF3gH5jK8nQ2rS4tU" }
+        ]
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "attestation/canonical-bytes",
+      "kind": "jcs",
+      "class": "attestation",
+      "description": "The signature covers the JCS serialisation of the record with 'attestation' removed: sorted keys, no whitespace, nothing else changed.",
+      "rules": ["ATT-6", "ATT-7"],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "artifact": {
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "size": 1,
+          "mediaType": "text/plain"
+        },
+        "scheme": { "name": "none" },
+        "created": "2026-11-22T12:00:00-06:00",
+        "attestation": { "algorithm": "ed25519", "signature": "AA" }
+      },
+      "expect": {
+        "jcs": "{\"artifact\":{\"digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"mediaType\":\"text/plain\",\"size\":1},\"created\":\"2026-11-22T12:00:00-06:00\",\"id\":\"urn:variorum:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"scheme\":{\"name\":\"none\"},\"variorum\":\"0.1\"}"
+      }
+    }
+  ]
+}

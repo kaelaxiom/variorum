@@ -1,0 +1,126 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "scheme",
+  "description": "Rules from spec/02-scheme.md: the scheme reference is a name plus an opaque label.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "scheme/member-required",
+      "class": "core",
+      "description": "Every record states which scheme its project uses, even if the answer is 'none'.",
+      "rules": ["SCH-1"],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": { "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f" },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": { "valid": false, "rules": ["SCH-1"] }
+    },
+    {
+      "name": "scheme/name-lowercase",
+      "class": "core",
+      "description": "Scheme names are lowercase tokens; 'SemVer' is not a scheme name.",
+      "rules": ["SCH-2"],
+      "patch": { "scheme": { "name": "SemVer", "version": "1.4.2" } },
+      "expect": { "valid": false, "rules": ["SCH-2"] }
+    },
+    {
+      "name": "scheme/project-name-accepted",
+      "class": "core",
+      "description": "A project-specific name is opaque to the consumer and valid without a prefix; the prefix is only a SHOULD (SCH-10).",
+      "rules": ["SCH-2", "SCH-10"],
+      "patch": { "scheme": { "name": "dv", "version": "dv-001" } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "scheme/namespaced-name-accepted",
+      "class": "core",
+      "description": "The x- prefix keeps a project-specific scheme out of the reserved namespace.",
+      "rules": ["SCH-2", "SCH-10"],
+      "patch": { "scheme": { "name": "x-du-vortoj-dv", "version": "dv-001", "sequence": 1 } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "scheme/none-carries-no-version",
+      "class": "core",
+      "description": "'none' means the project assigns no label; carrying one contradicts it.",
+      "rules": ["SCH-3"],
+      "patch": { "scheme": { "name": "none", "version": "1.0" } },
+      "expect": { "valid": false, "rules": ["SCH-3"] }
+    },
+    {
+      "name": "scheme/version-required",
+      "class": "core",
+      "description": "Every scheme except 'none' needs a label.",
+      "rules": ["SCH-3"],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": { "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f" },
+        "scheme": { "name": "semver" },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": { "valid": false, "rules": ["SCH-3"] }
+    },
+    {
+      "name": "scheme/none-accepted",
+      "class": "core",
+      "description": "A file that never had a version is described honestly with 'none'.",
+      "rules": ["SCH-3"],
+      "patch": { "scheme": { "name": "none" } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "scheme/authority-absolute-uri",
+      "class": "core",
+      "description": "An authority identifies the definition of the scheme, so it needs a scheme part.",
+      "rules": ["SCH-4"],
+      "patch": { "scheme": { "name": "semver", "version": "1.4.2", "authority": "semver.org/spec" } },
+      "expect": { "valid": false, "rules": ["SCH-4"] }
+    },
+    {
+      "name": "scheme/authority-accepted",
+      "class": "core",
+      "description": "An absolute URI is accepted and not resolved.",
+      "rules": ["SCH-4"],
+      "patch": { "scheme": { "name": "semver", "version": "1.4.2", "authority": "https://semver.org/spec/v2.0.0.html" } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "scheme/version-is-opaque",
+      "class": "core",
+      "description": "The label is not trimmed, case-folded or parsed; spaces survive validation untouched.",
+      "rules": ["SCH-7"],
+      "patch": { "scheme": { "name": "custom", "version": " 1.4.2.0+build " } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "scheme/sequence-non-negative",
+      "class": "core",
+      "description": "A sequence is a counter, never negative.",
+      "rules": ["SCH-8"],
+      "patch": { "scheme": { "name": "custom", "version": "v1", "sequence": -1 } },
+      "expect": { "valid": false, "rules": ["SCH-8"] }
+    },
+    {
+      "name": "scheme/sequence-accepted",
+      "class": "core",
+      "description": "Zero is a legitimate first value of a sequence.",
+      "rules": ["SCH-8"],
+      "patch": { "scheme": { "name": "custom", "version": "v1", "sequence": 0 } },
+      "expect": { "valid": true }
+    }
+  ]
+}

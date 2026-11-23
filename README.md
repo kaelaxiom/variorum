@@ -1,5 +1,7 @@
 # Variorum
 
+[![CI](https://github.com/kaelaxiom/variorum/actions/workflows/ci.yml/badge.svg)](https://github.com/kaelaxiom/variorum/actions/workflows/ci.yml)
+
 **An open record format for identifying, tracing and attesting any artifact — software or content, produced by humans or by machines.**
 
 > 📛 See [NAME.md](NAME.md) for the origin and meaning of the name.
@@ -69,12 +71,27 @@ A sidecar record — one JSON file, `variorum.json` — that travels with an art
 }
 ```
 
+## Conformance
+
+Conformance is not a compliment; it is a testable claim ([`spec/07-conformance.md`](spec/07-conformance.md)). The contract is a data suite any implementation can run, in any language:
+
+```
+python3 tools/variorum.py conform --coverage
+```
+
+- [`spec/vectors/`](spec/vectors/) — 103 accept/reject/graph/canonicalisation vectors, each citing the rule it exercises.
+- [`spec/vectors/exemptions.json`](spec/vectors/exemptions.json) — the rules no record can decide, each with a stated reason.
+- **Implementation levels:** `core`, `lineage`, `recipe`, `attestation`. Levels are not a ladder — an implementation may claim `recipe` without claiming `lineage`.
+
+A validator that rejects a record for violating a **SHOULD** is wrong: SHOULD violations are warnings, never errors ([ADR-0005](docs/adr/ADR-0005-should-violations-are-warnings.md)).
+
 ## Repository layout
 
 ```
 spec/                  The normative specification (English)
+spec/vectors/          Conformance vectors (data, not code)
 schema/                JSON Schema (2020-12) — normative for implementers
-tools/                 Reference CLI (Python, standard library only)
+tools/                 Reference CLI and conformance runner (Python, stdlib only)
 examples/              Real records from real projects
 docs/adr/              Decisions taken while designing the standard
 .agents/               Continuity protocol for agent sessions
@@ -82,7 +99,7 @@ docs/adr/              Decisions taken while designing the standard
 
 ## Status
 
-**Draft v0.1** — being written. Nothing here is stable yet. See [CHANGELOG.md](CHANGELOG.md) and [.agents/STATE.md](.agents/STATE.md).
+**Draft v0.1** — the specification is complete through section 07 and its conformance suite; nothing here is stable yet. See [CHANGELOG.md](CHANGELOG.md) and [.agents/STATE.md](.agents/STATE.md).
 
 ## Licence
 

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      # The reference implementation has no dependencies: no pip install step,
+      # and adding one is a specification bug (AGENTS.md, working rules).
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests --verbose
+
+      - name: Conformance vectors (with coverage — CON-27)
+        run: python3 tools/variorum.py conform --coverage
+
+      - name: Real examples validate
+        run: |
+          set -e
+          for record in examples/*/*.variorum.json; do
+            echo "== $record"
+            python3 tools/variorum.py validate "$record"
+          done
+
+      - name: Schema is valid JSON
+        run: python3 -c "import json; json.load(open('schema/variorum.schema.json'))"
+
+      - name: Vector suite is valid JSON
+        run: |
+          set -e
+          for vector in spec/vectors/*.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$vector"
+          done

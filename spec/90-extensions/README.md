@@ -19,4 +19,4 @@ Nothing here modifies the core specification. An extension may add keys under `e
 1. State what the other standard already guarantees. Do not re-specify it.
 2. Give the mapping in both directions, including the cases that do not map.
 3. Say which standard is authoritative for which question.
-4. Add a vector in `spec/vectors/` once the conformance suite exists.
+4. Add a vector in `spec/vectors/` for every rule the bridge defines. `conform --coverage` fails on a rule that is neither exercised nor exempted with a reason (CON-24, CON-25).

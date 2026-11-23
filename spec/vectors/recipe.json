@@ -1,0 +1,277 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "recipe",
+  "description": "Rules from spec/04-recipe.md: manual, build, generative and hybrid production.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": { "name": "semver", "version": "1.4.2" },
+    "created": "2026-11-22T12:00:00-06:00"
+  },
+  "vectors": [
+    {
+      "name": "recipe/member-must-be-object",
+      "class": "recipe",
+      "description": "A recipe is an object; a bare kind string carries no inputs or parameters.",
+      "rules": ["REC-1"],
+      "patch": { "recipe": "generative" },
+      "expect": { "valid": false, "rules": ["REC-1"] }
+    },
+    {
+      "name": "recipe/kind-required",
+      "class": "recipe",
+      "description": "Without a kind the reader cannot tell a build from a generation.",
+      "rules": ["REC-2"],
+      "patch": { "recipe": {} },
+      "expect": { "valid": false, "rules": ["REC-2"] }
+    },
+    {
+      "name": "recipe/kind-vocabulary",
+      "class": "recipe",
+      "description": "'assisted' is not one of the four production kinds.",
+      "rules": ["REC-2"],
+      "patch": { "recipe": { "kind": "assisted" } },
+      "expect": { "valid": false, "rules": ["REC-2"] }
+    },
+    {
+      "name": "recipe/build-source-required",
+      "class": "recipe",
+      "description": "A build that does not name its source cannot be inspected, let alone repeated.",
+      "rules": ["REC-4"],
+      "patch": {
+        "recipe": { "kind": "build", "tool": [{ "name": "make", "version": "4.4" }] }
+      },
+      "expect": { "valid": false, "rules": ["REC-4"] }
+    },
+    {
+      "name": "recipe/build-toolchain-required",
+      "class": "recipe",
+      "description": "The source without the toolchain does not describe a build.",
+      "rules": ["REC-3"],
+      "patch": {
+        "recipe": { "kind": "build", "source": { "ref": "https://github.com/cazucito/software-tools", "commit": "91d8acf" } }
+      },
+      "expect": { "valid": false, "rules": ["REC-3"] }
+    },
+    {
+      "name": "recipe/build-accepted",
+      "class": "recipe",
+      "description": "A complete build recipe: source, toolchain, environment and a determinism claim.",
+      "rules": ["REC-3", "REC-4", "REC-5", "REC-12"],
+      "patch": {
+        "recipe": {
+          "kind": "build",
+          "source": { "ref": "https://github.com/cazucito/software-tools", "commit": "91d8acf" },
+          "tool": [{ "name": "typst", "version": "0.13.1" }],
+          "environment": { "os": "debian-13", "arch": "amd64" },
+          "determinism": "full"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/build-tool-version-recommended",
+      "class": "recipe",
+      "description": "Recording a tool version is a SHOULD (REC-5); a tool named without one must not invalidate the record.",
+      "rules": ["REC-5"],
+      "patch": {
+        "recipe": {
+          "kind": "build",
+          "source": { "ref": "https://github.com/cazucito/software-tools", "commit": "91d8acf" },
+          "tool": [{ "name": "ops/tools/downloads_inventory.py" }]
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/generative-prompt-required",
+      "class": "recipe",
+      "description": "A generative recipe without the prompt is a claim with no evidence.",
+      "rules": ["REC-6"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" }
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-6"] }
+    },
+    {
+      "name": "recipe/generative-model-required",
+      "class": "recipe",
+      "description": "The tool must name the model; 'higgsfield' alone does not identify what produced the bytes.",
+      "rules": ["REC-7"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "higgsfield" },
+          "prompt": "Static camera, locked."
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-7"] }
+    },
+    {
+      "name": "recipe/generative-snapshot-or-timestamp",
+      "class": "recipe",
+      "description": "When the provider publishes no snapshot, the generation timestamp is mandatory.",
+      "rules": ["REC-8"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "higgsfield", "model": "grok_video" },
+          "prompt": "Static camera, locked."
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-8"] }
+    },
+    {
+      "name": "recipe/generative-accepted",
+      "class": "recipe",
+      "description": "Tool, model, snapshot, prompt, seed, parameters and an honest determinism claim.",
+      "rules": ["REC-6", "REC-7", "REC-8", "REC-9", "REC-10", "REC-11", "REC-12"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" },
+          "prompt": "Static camera, locked. A hand presses a brick onto the top course.",
+          "seed": 41827,
+          "parameters": { "resolution": "1080x1920", "fps": 24, "duration_s": 15 },
+          "determinism": "none"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/prompt-verbatim-accepted",
+      "class": "recipe",
+      "description": "The prompt is stored as sent: newlines, quotes and non-ASCII text survive unchanged.",
+      "rules": ["REC-9"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" },
+          "prompt": "Negative prompt: \"blurry\", no zoom.\nCámara fija — ladrillo sobre el muro."
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/inputs-must-be-array",
+      "class": "recipe",
+      "description": "Inputs are a list of (ref, role) pairs, not a map.",
+      "rules": ["REC-14"],
+      "patch": {
+        "recipe": { "kind": "manual", "inputs": { "ref": "start_image", "role": "reference" } }
+      },
+      "expect": { "valid": false, "rules": ["REC-14"] }
+    },
+    {
+      "name": "recipe/input-role-required",
+      "class": "recipe",
+      "description": "An input without a role cannot be interpreted by a reproducer.",
+      "rules": ["REC-14"],
+      "patch": {
+        "recipe": {
+          "kind": "manual",
+          "inputs": [{ "ref": "urn:variorum:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }]
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-14"] }
+    },
+    {
+      "name": "recipe/input-ref-must-be-identifiable",
+      "class": "recipe",
+      "description": "A local nickname such as 'R4-C1' is not a Variorum id and not a URI.",
+      "rules": ["REC-15"],
+      "patch": {
+        "recipe": {
+          "kind": "manual",
+          "inputs": [{ "ref": "R4-C1", "role": "start_image" }]
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-15"] }
+    },
+    {
+      "name": "recipe/inputs-accepted",
+      "class": "recipe",
+      "description": "Inputs referenced by Variorum id and by absolute URI, each with a role token.",
+      "rules": ["REC-14", "REC-15", "REC-16"],
+      "patch": {
+        "recipe": {
+          "kind": "manual",
+          "steps": ["Composite the still over the plate.", "Grade to the approved LUT."],
+          "inputs": [
+            { "ref": "urn:variorum:sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "role": "start_image" },
+            { "ref": "https://example.org/plates/r4-c1.png", "role": "reference" }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/manual-steps-accepted",
+      "class": "recipe",
+      "description": "A manual recipe may be nothing but an ordered list of steps.",
+      "rules": ["REC-18"],
+      "patch": {
+        "recipe": { "kind": "manual", "steps": ["Print the sheet.", "Trim to the crop marks."] }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/hybrid-stages-required",
+      "class": "recipe",
+      "description": "A hybrid recipe without stages describes no pipeline.",
+      "rules": ["REC-19"],
+      "patch": { "recipe": { "kind": "hybrid", "determinism": "none" } },
+      "expect": { "valid": false, "rules": ["REC-19"] }
+    },
+    {
+      "name": "recipe/hybrid-stage-kind",
+      "class": "recipe",
+      "description": "Stages are build or generative; 'manual' is not a stage kind.",
+      "rules": ["REC-19"],
+      "patch": { "recipe": { "kind": "hybrid", "stages": [{ "kind": "manual" }] } },
+      "expect": { "valid": false, "rules": ["REC-19"] }
+    },
+    {
+      "name": "recipe/hybrid-stage-rules-apply",
+      "class": "recipe",
+      "description": "A generative stage must satisfy the generative rules, including the prompt.",
+      "rules": ["REC-19", "REC-6"],
+      "patch": {
+        "recipe": {
+          "kind": "hybrid",
+          "stages": [
+            { "kind": "build", "source": { "ref": "https://example.org/story.md" }, "tool": [{ "name": "pandoc", "version": "3.1" }] },
+            { "kind": "generative", "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" } }
+          ]
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-6"] }
+    },
+    {
+      "name": "recipe/hybrid-accepted",
+      "class": "recipe",
+      "description": "A build stage followed by a generative stage, each complete.",
+      "rules": ["REC-19", "REC-3", "REC-4", "REC-7"],
+      "patch": {
+        "recipe": {
+          "kind": "hybrid",
+          "determinism": "none",
+          "stages": [
+            { "kind": "build", "source": { "ref": "https://example.org/story.md" }, "tool": [{ "name": "pandoc", "version": "3.1" }] },
+            { "kind": "generative", "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" }, "prompt": "Static camera, locked." }
+          ]
+        }
+      },
+      "expect": { "valid": true }
+    }
+  ]
+}
