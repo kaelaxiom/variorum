@@ -1,0 +1,18 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:df678b70810c35ed26fec93d1568d5357080f818bdbf089066a3f0b104f3cb4a",
+  "artifact": {
+    "digest": "sha256:df678b70810c35ed26fec93d1568d5357080f818bdbf089066a3f0b104f3cb4a",
+    "size": 2081153,
+    "mediaType": "image/png",
+    "name": "DV_mark-integracion-principal.png"
+  },
+  "scheme": { "name": "none" },
+  "created": "2026-11-22T21:58:00-06:00",
+  "producer": { "name": "cazucito", "kind": "human" },
+  "extensions": {
+    "variorum:conformance": ["core"],
+    "org.cazucito:artifact-mtime": "2026-09-20T14:39:00-06:00",
+    "org.cazucito:note": "Brand mark. Generated with a model-assisted workflow, but no record was kept at the time; this record claims identity only."
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:b4b9ac719a3f127d887b1a4903c3c2c3f3248d4c3500b9b3621e3c2012dc28b8",
+  "artifact": {
+    "digest": "sha256:b4b9ac719a3f127d887b1a4903c3c2c3f3248d4c3500b9b3621e3c2012dc28b8",
+    "size": 3840669,
+    "mediaType": "video/mp4",
+    "name": "discipline-gardan-001.es.video-shot-01.raw-v1-rejected.mp4"
+  },
+  "scheme": {
+    "name": "x-la-enpenso-shot",
+    "version": "001",
+    "sequence": 1
+  },
+  "created": "2026-11-22T21:58:00-06:00",
+  "producer": {
+    "name": "hermes-agent",
+    "kind": "software",
+    "software": { "name": "hermes" }
+  },
+  "recipe": {
+    "kind": "generative",
+    "tool": {
+      "name": "higgsfield",
+      "model": "grok_video",
+      "snapshot": "2026-11-20"
+    },
+    "prompt": "Static camera, locked. A hand presses a brick onto the top course. No cuts, no zoom, no camera movement.",
+    "parameters": {
+      "resolution": "1080x1920",
+      "fps": 24,
+      "duration_s": 15,
+      "start_image": "R4-C1"
+    },
+    "determinism": "none",
+    "generatedAt": "2026-11-20T08:10:00-06:00"
+  },
+  "state": {
+    "current": "rejected",
+    "transitions": [
+      {
+        "from": "draft",
+        "to": "candidate",
+        "actor": { "name": "hermes-agent", "kind": "software", "software": { "name": "hermes" } },
+        "at": "2026-11-20T08:12:00-06:00"
+      },
+      {
+        "from": "candidate",
+        "to": "rejected",
+        "actor": { "name": "cazucito", "kind": "human" },
+        "at": "2026-11-20T08:35:00-06:00",
+        "reason": "Hand enters frame from the wrong side; brick appears before the fingers close."
+      }
+    ]
+  },
+  "extensions": {
+    "variorum:conformance": ["core", "lineage", "recipe"]
+  }
+}

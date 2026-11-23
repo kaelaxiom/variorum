@@ -1,0 +1,63 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:184e00a4737ce758bdac6bab00ac09c3f456c4ee35db240919f93e0ca2d01c62",
+  "artifact": {
+    "digest": "sha256:184e00a4737ce758bdac6bab00ac09c3f456c4ee35db240919f93e0ca2d01c62",
+    "size": 36207,
+    "mediaType": "application/json",
+    "name": "downloads-inventory.json"
+  },
+  "scheme": {
+    "name": "custom",
+    "version": "v3",
+    "authority": "https://software-tools.pcabrera.com"
+  },
+  "created": "2026-11-22T21:58:00-06:00",
+  "producer": {
+    "name": "hermes-agent",
+    "kind": "software",
+    "software": { "name": "hermes" }
+  },
+  "recipe": {
+    "kind": "build",
+    "source": {
+      "ref": "https://github.com/cazucito/software-tools",
+      "commit": "91d8acf"
+    },
+    "tool": [
+      { "name": "python", "version": "3.13.5" },
+      { "name": "ops/tools/downloads_inventory.py" }
+    ],
+    "environment": {
+      "os": "debian-13",
+      "arch": "amd64"
+    },
+    "determinism": "none"
+  },
+  "state": {
+    "current": "published",
+    "transitions": [
+      {
+        "from": "draft",
+        "to": "candidate",
+        "actor": { "name": "hermes-agent", "kind": "software", "software": { "name": "hermes" } },
+        "at": "2026-10-15T10:24:00-06:00"
+      },
+      {
+        "from": "candidate",
+        "to": "approved",
+        "actor": { "name": "cazucito", "kind": "human" },
+        "at": "2026-10-15T11:02:00-06:00"
+      },
+      {
+        "from": "approved",
+        "to": "published",
+        "actor": { "name": "hermes-agent", "kind": "software", "software": { "name": "hermes" } },
+        "at": "2026-10-15T11:05:00-06:00"
+      }
+    ]
+  },
+  "extensions": {
+    "variorum:conformance": ["core", "lineage", "recipe"]
+  }
+}

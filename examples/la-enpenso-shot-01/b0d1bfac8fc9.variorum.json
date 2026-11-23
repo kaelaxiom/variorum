@@ -1,0 +1,67 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:b0d1bfac8fc9e59be3525f2e4b973ea7017f31e2b35e49e5d6864c3979e941dd",
+  "artifact": {
+    "digest": "sha256:b0d1bfac8fc9e59be3525f2e4b973ea7017f31e2b35e49e5d6864c3979e941dd",
+    "size": 2683457,
+    "mediaType": "video/mp4",
+    "name": "discipline-gardan-001.es.video-shot-01.raw.mp4"
+  },
+  "scheme": {
+    "name": "x-la-enpenso-shot",
+    "version": "001",
+    "sequence": 2
+  },
+  "created": "2026-11-22T21:58:00-06:00",
+  "producer": {
+    "name": "hermes-agent",
+    "kind": "software",
+    "software": { "name": "hermes" }
+  },
+  "lineage": {
+    "parents": [
+      {
+        "id": "urn:variorum:sha256:b4b9ac719a3f127d887b1a4903c3c2c3f3248d4c3500b9b3621e3c2012dc28b8",
+        "relation": "revision",
+        "note": "Same intent, second attempt after the first take was rejected."
+      }
+    ]
+  },
+  "recipe": {
+    "kind": "generative",
+    "tool": {
+      "name": "higgsfield",
+      "model": "grok_video",
+      "snapshot": "2026-11-20"
+    },
+    "prompt": "Static camera, locked. A hand presses a brick onto the top course. No cuts, no zoom, no camera movement.",
+    "parameters": {
+      "resolution": "1080x1920",
+      "fps": 24,
+      "duration_s": 15,
+      "start_image": "R4-C1"
+    },
+    "determinism": "none",
+    "generatedAt": "2026-11-20T08:41:00-06:00"
+  },
+  "state": {
+    "current": "approved",
+    "transitions": [
+      {
+        "from": "draft",
+        "to": "candidate",
+        "actor": { "name": "hermes-agent", "kind": "software", "software": { "name": "hermes" } },
+        "at": "2026-11-20T08:43:00-06:00"
+      },
+      {
+        "from": "candidate",
+        "to": "approved",
+        "actor": { "name": "cazucito", "kind": "human" },
+        "at": "2026-11-20T16:51:54-06:00"
+      }
+    ]
+  },
+  "extensions": {
+    "variorum:conformance": ["core", "lineage", "recipe"]
+  }
+}
