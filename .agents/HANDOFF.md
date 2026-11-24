@@ -1,6 +1,28 @@
 # HANDOFF
 
-## Last session — 2026-11-24 (Phase 2: C2PA bridge)
+## Last session — 2026-11-24 (Phase 2: SWHID bridge)
+
+**Did:** closed the SWHID bridge the previous run had left written but uncommitted and red.
+
+- `spec/90-extensions/swhid.md` (`SWH-1`…`SWH-8`): a record claims the bridge with `extensions["variorum:swhid"]`, an object with exactly one member, `swhid`, holding one SWHID of scheme version 1. The identifier is shape-checked only — `swh:1:`, one of the five object types, 40 lowercase hex digits, optional `;name=value` qualifiers from the closed list of §6.2/§6.3. Context qualifiers are held to SWHID's *producer* constraints (§6.1–§6.3: `visit` requires `origin` and names a snapshot, `path` only on `cnt`/`dir` and absolute, `anchor` requires `path` and names a root object, each qualifier at most once, `origin` a URI); fragment qualifiers (`lines`, `bytes`) are refused because a fragment is not an artifact (`ID-9`); identity stays the digest (`SWH-6`).
+- The load-bearing answer to the handoff's question — **can a SWHID be the digest?** No, and the document proves it with the same 111 bytes hashed three ways: `a370e4f1…` (SHA-256, the digest), `affa1e6d…` (raw SHA-1, used by nothing), `bad480af…` (SHA-1 over `blob 111\0` + bytes, the `cnt` SWHID; `git hash-object` prints the same digits). Even the friendliest object type hashes a different pre-image; `dir`, `rev`, `rel` and `snp` are not about the artifact's bytes at all, and the tarball/`dir` distinction is written down as the case where the two identifiers earn their keep side by side.
+- `spec/vectors/swhid.json` — 32 vectors, each marked `"bridge": "variorum:swhid"`, including accept vectors for the four non-`cnt` object types, a full four-qualifier claim in canonical order, a `%3B` escape that must survive untouched, a path whose case must not be normalised, and the unmarked accept vector proving a record without the claim says nothing about the archive. `SWH-7`/`SWH-8` exempted with reasons (consumer obligations).
+- `docs/adr/ADR-0012-swhid-bridge-is-a-sibling-identifier.md` — why a content hash from another model stays a sibling identifier, and why absorbing qualifiers into `producer`/`created`/`lineage` would state things that verify wrong.
+- Schema: `extensions["variorum:swhid"]` typed (`additionalProperties: false`, pattern kept byte-for-byte in step with the tool's regex, a `not` guard against fragment qualifiers); the `SWH-4` combination checks are declared as tool-enforced, because JSON Schema cannot express a constraint that depends on another member's value.
+- Tool 0.5.0 (`validate_swhid_bridge`, `SWH` rule family); `tests/test_validate.py` gains `SwhidBridgeTests` (15 tests), one of which recomputes the fixture's `cnt` SWHID from `blob 111\0` + bytes and asserts that `spec/vectors/swhid.json`'s base claim is that value — the vector suite cannot recompute a SWHID itself, so a unit test pins it. `tests/test_vectors.py` expects the `swhid` group; README, CHANGELOG, PLAN, extension and vector READMEs updated.
+
+**Verified:** 103 unit tests OK; `conform --coverage` 170/170 PASS, 90/125 referenced, 35 exempt, 0 uncovered; five examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, and still the only blocker on a public announcement.
+- SPDX next. Worth reading before designing: SPDX carries `checksum` values in the same algorithms Variorum uses, so unlike SWHID a checksum *can* equal `artifact.digest`. The decision is what a checksum of a *package* means when the record describes one artifact, and what the bridge should point at (the SBOM document, by `documentNamespace`) rather than copy.
+- One SWHID per record. A project that wants both the `rel` and a locally checkable `cnt` of the same release needs two records or a namespaced extension key until a bridge revision adds a multi-object form (ADR-0012).
+- Consistency item: `C2P-1` and `SWH-1` reject an explicit JSON `null` under the claim key, because the record wrote the key; the SemVer bridge still treats `null` as absent and returns early. The schema types all three claims as objects, so the tool is now stricter than the SemVer check. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line, so it was not done here.
+- `conform --verbose` still has no "skipped bridge vector" report (it never had; the reference runner implements every bridge).
+- `extensions["variorum:semver"].tag` still holds one tag per record.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-24 (Phase 2: C2PA bridge)
 
 **Did:** closed the C2PA bridge the previous run had left uncommitted and red.
 
@@ -63,8 +85,8 @@
 
 ## Next session should
 
-1. Write `spec/90-extensions/c2pa.md`: what C2PA guarantees (embedded, signed, ingredient-based), what Variorum guarantees (sidecar identity, lineage, state), which standard is authoritative for which question, and the non-mapping cases (C2PA hard binding vs. Variorum digest; C2PA ingredients vs. `lineage`; a C2PA manifest that is stripped or re-signed).
-2. Make it opt-in the same way: extension key `variorum:c2pa` or a documented reference from `extensions["c2pa:manifest"]` to the manifest, rules marked `bridge`, vectors in `spec/vectors/c2pa.json`.
+1. Write `spec/90-extensions/spdx.md`: what an SBOM guarantees (elements, relationships, package checksums, `documentNamespace`), what Variorum guarantees, and the one place the two can agree (an SPDX `checksum` using SHA-256 of the artifact itself, which *can* equal `artifact.digest` — say when, and what a package checksum that covers more than one file means instead).
+2. Make it opt-in the same way: extension key `variorum:spdx`, vectors in `spec/vectors/spdx.json` marked `bridge`, `CON-28`.
 3. Add an ADR if the coexistence rule is normative; re-run `python3 -m unittest discover -s tests` and `python3 tools/variorum.py conform --coverage` before every commit.
 
 ## Previous session — 2026-11-23 (Phase 1: testability)

@@ -6,6 +6,10 @@ All notable changes to the Variorum specification. Format loosely based on Keep 
 
 ### Added
 
+- `spec/90-extensions/swhid.md` — the third extension bridge (`SWH-1`…`SWH-8`): a record cites a Software Heritage identifier in `extensions["variorum:swhid"].swhid` and never promotes it to `artifact.digest` or `id`. A `cnt` SWHID hashes `blob <size>` + NUL + the bytes (§5.2), so it is a different pre-image from the digest even for the friendliest object type; `dir`, `rev`, `rel` and `snp` are not about the artifact's bytes at all. Context qualifiers (`origin`, `visit`, `anchor`, `path`) are validated against SWHID's producer constraints (§6.1–§6.3), fragment qualifiers (`lines`, `bytes`) are refused because a fragment is not an artifact (`ID-9`), and one SWHID per record is the whole claim.
+- `spec/vectors/swhid.json` — 32 vectors for the bridge, each marked `"bridge": "variorum:swhid"`, including an accept vector for a record without the claim (silence is not a denial) and an accept vector pinning the fact that the record validator cannot relate a shape-valid `cnt` SWHID to the digest (that is the consumer's `SWH-7` check, not the validator's).
+- `docs/adr/ADR-0012-swhid-bridge-is-a-sibling-identifier.md` — why a content hash from another model stays a sibling identifier instead of becoming the identity.
+- `SWH-1`…`SWH-6` in the reference validator; `TOOL_VERSION` 0.5.0.
 - `spec/90-extensions/c2pa.md` — the second extension bridge (`C2P-1`…`C2P-8`): a record points at the active C2PA 2.2 manifest by its `urn:c2pa:` URN and never copies the manifest's content; `location` says whether the manifest store is embedded or external (the digest means different things in each case); identity stays the digest, and the C2PA hard binding, ingredients and claim signature are written down as non-mappings rather than plausible conversions.
 - `spec/vectors/c2pa.json` — 19 vectors for the bridge, each marked `"bridge": "variorum:c2pa"`, including the over-strictness guards (lowercase UUID string representations, opaque optional URN components) and a rejected JSON `null` claim.
 - `docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md` — why the bridge points instead of absorbing signed content into an unsigned sidecar.
@@ -30,6 +34,7 @@ All notable changes to the Variorum specification. Format loosely based on Keep 
 
 ### Changed
 
+- `schema/variorum.schema.json` — `extensions["variorum:swhid"]` is typed: an object with `swhid` required and no other member, the identifier pattern kept byte-for-byte in step with the tool's regex, and a `not` guard against fragment qualifiers. The qualifier *combinations* of `SWH-4` depend on the object type and on the other qualifiers; JSON Schema cannot express them, so the reference tool enforces them and the schema says so.
 - `CON-9` — a vector carrying `bridge` is obligatory only of implementations that claim that bridge; every other implementation skips it instead of failing it.
 - `schema/variorum.schema.json` — `extensions["variorum:c2pa"]` is typed: an object with `manifest` and `location` required, `uri` required exactly when `location` is `external` and forbidden otherwise, and no members beyond the three the bridge defines.
 - `CON-24` — coverage now counts every rule identifier defined under `spec/90-extensions/`, not only sections 00–06; `conform --coverage` and CI follow.

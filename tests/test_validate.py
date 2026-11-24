@@ -16,6 +16,7 @@ remain valid, ADR-0005).
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import sys
 import unittest
@@ -429,6 +430,121 @@ class C2paBridgeTests(unittest.TestCase):
         rules = {issue.rule for issue in variorum.validate_record(record).errors}
         self.assertIn("C2P-6", rules, "the C2PA URN must never become the record's identity")
         self.assertIn("ID-7", rules)
+
+    def test_without_the_claim_nothing_changes(self) -> None:
+        self.assert_accepted(record_with())
+        self.assert_accepted(record_with(extensions={"org.example:note": "x"}))
+
+
+class SwhidBridgeTests(unittest.TestCase):
+    """SWH-1..SWH-6: the bridge cites a sibling identifier and binds only the records that claim it (ADR-0012)."""
+
+    FIXTURE = ROOT / "spec" / "vectors" / "fixtures" / "hello.txt"
+    CONTENT = "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871"
+    SNAPSHOT = "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453"
+    REVISION = "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d"
+    DIRECTORY = "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505"
+
+    def claimed(self, value: str = CONTENT, **claim) -> dict:
+        return record_with(extensions={"variorum:swhid": {"swhid": value, **claim}})
+
+    def assert_rejected(self, record: dict, expected_rule: str) -> None:
+        report = variorum.validate_record(record)
+        rules = {issue.rule for issue in report.errors}
+        self.assertFalse(report.ok, "the record should have been rejected")
+        self.assertIn(expected_rule, rules, f"expected {expected_rule}, got {sorted(rules)}: {report.errors}")
+
+    def assert_accepted(self, record: dict) -> None:
+        report = variorum.validate_record(record)
+        self.assertTrue(report.ok, f"the record should have been accepted: {report.errors}")
+
+    def test_the_fixture_swhid_is_recomputed_not_stored(self) -> None:
+        """SWHID 1.2 §5.2: the content SWHID is SHA-1 over 'blob <size>' + NUL + the bytes.
+
+        The base claim in spec/vectors/swhid.json is asserted against this
+        computation, so the vectors cannot drift from the fixture they name.
+        """
+        data = self.FIXTURE.read_bytes()
+        header = b"blob %d\0" % len(data)
+        self.assertEqual(hashlib.sha1(header + data).hexdigest(), self.CONTENT.split(":")[-1])
+        document = json.loads((ROOT / "spec" / "vectors" / "swhid.json").read_text(encoding="utf-8"))
+        self.assertEqual(document["base"]["extensions"]["variorum:swhid"]["swhid"], self.CONTENT)
+
+    def test_claim_must_be_an_object(self) -> None:
+        for claim in (self.CONTENT, None, []):
+            with self.subTest(claim=claim):
+                self.assert_rejected(record_with(extensions={"variorum:swhid": claim}), "SWH-1")
+
+    def test_claim_requires_the_identifier(self) -> None:
+        self.assert_rejected(record_with(extensions={"variorum:swhid": {}}), "SWH-2")
+        self.assert_rejected(self.claimed(""), "SWH-2")
+
+    def test_core_identifier_shape(self) -> None:
+        rejected = (
+            "swh:1:cnt:bad480af",                                     # truncated hash
+            "swh:2:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871",      # unknown scheme version
+            "swh:1:blob:bad480af921edbabd43ecf18df4362aa3c3ae871",     # git's word for the type
+            "swh:1:cnt:BAD480AF921EDBABD43ECF18DF4362AA3C3AE871",      # uppercase hex
+            "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871 ",     # trailing space
+        )
+        for value in rejected:
+            with self.subTest(value=value):
+                self.assert_rejected(self.claimed(value), "SWH-2")
+
+    def test_qualifier_shape(self) -> None:
+        for value in (
+            self.CONTENT + ";collection=swh:1:cnt:" + "0" * 40,  # name outside §6.2/§6.3
+            self.CONTENT + ";origin=",                             # empty value
+            self.CONTENT + ";origin",                              # not a key/value pair
+        ):
+            with self.subTest(value=value):
+                self.assert_rejected(self.claimed(value), "SWH-2")
+
+    def test_visit_requires_origin_and_a_snapshot(self) -> None:
+        self.assert_rejected(self.claimed(self.CONTENT + ";visit=" + self.SNAPSHOT), "SWH-4")
+        self.assert_rejected(self.claimed(self.CONTENT + ";origin=https://example.com/r.git;visit=" + self.REVISION), "SWH-4")
+        self.assert_accepted(self.claimed(self.CONTENT + ";origin=https://example.com/r.git;visit=" + self.SNAPSHOT))
+
+    def test_path_is_only_for_contents_and_directories(self) -> None:
+        self.assert_rejected(self.claimed(self.REVISION + ";path=/src"), "SWH-4")
+        self.assert_rejected(self.claimed(self.CONTENT + ";path=src/main.c"), "SWH-4")
+        self.assert_accepted(self.claimed(self.DIRECTORY + ";path=/src"))
+
+    def test_anchor_requires_path_and_a_root_object(self) -> None:
+        self.assert_rejected(self.claimed(self.CONTENT + ";anchor=" + self.REVISION), "SWH-4")
+        self.assert_rejected(self.claimed(self.CONTENT + ";path=/main.c;anchor=" + self.CONTENT), "SWH-4")
+        self.assert_accepted(self.claimed(self.CONTENT + ";path=/main.c;anchor=" + self.REVISION))
+
+    def test_qualifiers_must_not_repeat(self) -> None:
+        value = self.CONTENT + ";origin=https://example.com/a.git;origin=https://example.com/b.git"
+        self.assert_rejected(self.claimed(value), "SWH-4")
+
+    def test_origin_must_be_a_uri(self) -> None:
+        self.assert_rejected(self.claimed(self.CONTENT + ";origin=github.com/darktable-org/darktable"), "SWH-4")
+        self.assert_accepted(self.claimed(self.CONTENT + ";origin=https://example.com/x%3By.git"))
+
+    def test_fragment_qualifiers_are_forbidden(self) -> None:
+        for qualifier in ("lines=9-15", "bytes=154-315"):
+            with self.subTest(qualifier=qualifier):
+                self.assert_rejected(self.claimed(self.CONTENT + ";" + qualifier), "SWH-5")
+
+    def test_the_claim_defines_one_member(self) -> None:
+        record = self.claimed(self.CONTENT, resolver="https://archive.softwareheritage.org/" + self.CONTENT + "/")
+        self.assert_rejected(record, "SWH-3")
+
+    def test_identity_never_becomes_a_swhid(self) -> None:
+        record = self.claimed()
+        record["id"] = self.CONTENT
+        rules = {issue.rule for issue in variorum.validate_record(record).errors}
+        self.assertIn("SWH-6", rules, "a SWHID must never become the record's identity")
+        self.assertIn("ID-7", rules)
+        promoted = self.claimed()
+        promoted["artifact"]["digest"] = self.CONTENT
+        self.assert_rejected(promoted, "SWH-6")
+
+    def test_a_local_check_is_not_the_record_validator_s_job(self) -> None:
+        """SWH-7 binds the consumer with the bytes; a shape-valid claim is all the record can decide."""
+        self.assert_accepted(self.claimed("swh:1:cnt:" + "4" * 40))
 
     def test_without_the_claim_nothing_changes(self) -> None:
         self.assert_accepted(record_with())

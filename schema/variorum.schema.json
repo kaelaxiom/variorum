@@ -238,6 +238,20 @@
               "then": { "not": { "required": ["uri"] } }
             }
           ]
+        },
+        "variorum:swhid": {
+          "type": "object",
+          "description": "SWH-1: the claim that this record cites a Software Heritage identifier (spec/90-extensions/swhid.md). The identifier is a sibling claim, never the artifact's identity (SWH-6, ADR-0012).",
+          "required": ["swhid"],
+          "additionalProperties": false,
+          "properties": {
+            "swhid": {
+              "type": "string",
+              "pattern": "^swh:1:(cnt|dir|rev|rel|snp):[0-9a-f]{40}(;[^;\\s]+)*$",
+              "not": { "pattern": ";(lines|bytes)=" },
+              "description": "SWH-2: one SWHID of scheme version 1 (SWHID 1.2 §4, §5.1), stored as the archive emitted it. SWH-5: no fragment qualifier, because a record identifies a whole artifact. The qualifier combinations of SWH-4 depend on the object type and on the other qualifiers; JSON Schema cannot express those, so the reference tool enforces them."
+            }
+          }
         }
       }
     }

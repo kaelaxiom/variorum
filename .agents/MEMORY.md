@@ -67,3 +67,15 @@ C2PA's ABNF for its URN allows only uppercase hex digits, yet the UUID string re
 `C2P-2` originally required the URN to be "recorded verbatim". No vector can check that: verification needs the manifest, which the record validator never sees. The requirement is real, but it is a producer obligation, so it belongs in prose, not in a rule the coverage report counts as tested.
 
 **Lesson:** any MUST whose truth depends on a document outside the record is a preference wearing a normative keyword. Keep the checkable shape as the rule; state the fidelity expectation as prose.
+
+## 2026-11-24 — Three hashes, one byte sequence
+
+The 111-byte `hello.txt` fixture hashes to `a370e4f1…` under SHA-256 (the digest), `affa1e6d…` under raw SHA-1 (used by nothing here) and `bad480af…` under SHA-1 of `blob 111\0` + bytes (the `cnt` SWHID, and what `git hash-object` prints). An identifier that looks like a hash can still be a hash of something else.
+
+**Lesson:** before deciding whether two identifiers can ever substitute for each other, hash the same fixture every way the candidates allow and compare pre-images, not just algorithms. "Both are hashes of the content" is the sentence that produces records that verify wrong.
+
+## 2026-11-24 — CON-19 recomputes digests, not every hash a vector carries
+
+A vector's `fixture: true` check guards `artifact.digest`; it cannot recompute a SWHID, because that needs a different pre-image that the suite does not model. The base claim in `spec/vectors/swhid.json` is therefore a stored string, and only a unit test can keep it honest.
+
+**Lesson:** when a bridge vector carries a foreign hash, add a test that rebuilds that hash from the fixture in the foreign standard's own way and asserts the vector's value. Otherwise the same staleness CON-19 exists to prevent simply moves one file over.

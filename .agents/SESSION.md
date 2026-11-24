@@ -155,3 +155,40 @@ Close the C2PA bridge the previous run had left in the tree and red: no ADR, no 
 - SWHID, SPDX, PROV bridges.
 - SemVer bridge still treats an explicit `null` claim as absent while the C2PA bridge rejects it; aligning needs a decision and a vector.
 - Owner review, transfer to `cazucito`, site domain.
+
+---
+
+# SESSION — 2026-11-24 (Phase 2: SWHID bridge, closed)
+
+## Objective
+
+Close the SWHID bridge the previous run had left in the tree, uncommitted and with one red test.
+
+## Done
+
+- Finished `spec/90-extensions/swhid.md` (`SWH-1`…`SWH-8`) as written by the previous run: one-member claim, strict scheme version 1 shape, context qualifiers held to SWHID's producer constraints, fragment qualifiers refused, identity never a SWHID.
+- Took the three hashes of the same 111-byte fixture apart in 90.3 — `a370e4f1…` (digest), `affa1e6d…` (raw SHA-1, unused) and `bad480af…` (git blob SHA-1, the `cnt` SWHID) — and used them to answer the handoff question directly: **no SWHID can be the digest, because the pre-images differ**; for `dir`/`rev`/`rel`/`snp` the subject is not even the artifact's bytes.
+- `spec/vectors/swhid.json` — 32 vectors marked `"bridge": "variorum:swhid"`, plus one unmarked accept vector. `SWH-7`/`SWH-8` exempted with consumer-obligation reasons.
+- `docs/adr/ADR-0012-swhid-bridge-is-a-sibling-identifier.md`.
+- Schema typed for the claim; the `SWH-4` combination rules are declared tool-enforced because JSON Schema cannot condition on another member's value.
+- Tool 0.5.0 (`validate_swhid_bridge`, `SWH` rule family); `SwhidBridgeTests` (15 tests) in `tests/test_validate.py`, including `test_the_fixture_swhid_is_recomputed_not_stored` — it rebuilds `blob 111\0` + bytes, hashes it, and asserts the vector base carries that value, so the stored SWHID cannot go stale silently; `swhid` added to the expected groups in `tests/test_vectors.py`.
+- Docs brought in line: README counts (170 vectors, eleven groups) and bridge list, CHANGELOG (Added and Changed), extensions README (swhid moved to Written, ADR-0012 cited), vectors README row, PLAN checkbox, STATE, HANDOFF, and the stale "Next session should" block, which still described the C2PA work.
+
+## Numbers
+
+- 103 unit tests OK.
+- `conform --coverage`: 170/170 PASS; 90/125 rules referenced, 35 exempt, 0 uncovered.
+- Five example records validate.
+
+## Decisions
+
+- Reference, never promote or absorb (ADR-0012): a content hash from another object model is a sibling identifier.
+- One SWHID per record; the object type is the producer's choice and each type answers a different question.
+- Context qualifiers yes, fragment qualifiers no — a record describes one artifact, and a fragment is not one.
+- The record validator checks shape only; relating a `cnt` SWHID to the bytes is `SWH-7`'s consumer obligation, and no vector pretends otherwise.
+
+## Open
+
+- SPDX next; its checksums can coincide with the digest, which is the interesting difference from SWHID.
+- SemVer bridge still treats an explicit `null` claim as absent while C2PA and SWHID reject it.
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.

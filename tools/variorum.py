@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.4.0"
+TOOL_VERSION = "0.5.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -96,6 +96,26 @@ C2PA_URN_PATTERN = re.compile(
 )
 # RFC 3986 absolute URI: a scheme, then whatever the scheme allows.
 ABSOLUTE_URI_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+
+SWHID_BRIDGE = "variorum:swhid"
+SWHID_MEMBERS = {"swhid"}
+SWHID_OBJECT_TYPES = ("cnt", "dir", "rev", "rel", "snp")
+# SWHID 1.2 §6.2 and §6.3: fragment qualifiers and context qualifiers.
+SWHID_QUALIFIERS = {"origin", "visit", "anchor", "path", "lines", "bytes"}
+SWHID_FRAGMENT_QUALIFIERS = {"lines", "bytes"}
+SWHID_ROOT_TYPES = ("dir", "rev", "rel", "snp")
+# SWHID 1.2 §4, §5.1: swh:1:<type>:<40 lowercase hex digits>[;qualifier...].
+# The grammar admits only 'a'-'f' in the intrinsic identifier, and the
+# reference implementation (swh.model) emits lowercase, so the bridge is
+# strict about case here. It is not strict about the rest of a value: §4
+# takes an RFC 3987 IRI, so non-ASCII characters are legal.
+SWHID_HEX = r"[0-9a-f]{40}"
+SWHID_TYPE_ALTERNATION = "|".join(SWHID_OBJECT_TYPES)
+SWHID_PATTERN = re.compile(
+    rf"^swh:1:(?P<type>{SWHID_TYPE_ALTERNATION}):{SWHID_HEX}(?P<tail>(?:;[^;\s]+)*)$"
+)
+SWHID_SNAPSHOT_PATTERN = re.compile(rf"^swh:1:snp:{SWHID_HEX}$")
+SWHID_ANCHOR_PATTERN = re.compile(rf"^swh:1:(?:{'|'.join(SWHID_ROOT_TYPES)}):{SWHID_HEX}$")
 
 
 # STA-10: legal lifecycle transitions.
@@ -618,6 +638,116 @@ def validate_c2pa_bridge(record: dict[str, Any], report: Report) -> None:
         )
 
 
+def validate_swhid_bridge(record: dict[str, Any], report: Report) -> None:
+    """SWH-1..SWH-6 (spec/90-extensions/swhid.md).
+
+    The bridge cites a Software Heritage identifier as a sibling claim, never
+    as the artifact's identity. Only records carrying
+    ``extensions["variorum:swhid"]`` are held to these rules; a record for an
+    archived artifact without the claim says nothing about the archive
+    (ADR-0012).
+    """
+    extensions = record.get("extensions")
+    if not isinstance(extensions, dict):
+        return
+    if SWHID_BRIDGE not in extensions:
+        return
+    claim = extensions[SWHID_BRIDGE]
+    if not isinstance(claim, dict):
+        report.add("SWH-1", "'variorum:swhid' must be an object")
+        return
+
+    unknown = sorted(set(claim) - SWHID_MEMBERS)
+    if unknown:
+        report.add("SWH-3", f"the SWHID claim defines 'swhid' only; found {unknown}")
+
+    # SWH-6 before the claim's own shape, so that a record which promoted an
+    # identifier to its identity is told why even when the claim is malformed.
+    record_id = record.get("id")
+    if isinstance(record_id, str) and record_id.startswith("swh:"):
+        report.add(
+            "SWH-6",
+            "'id' must stay the urn:variorum: identifier derived from artifact.digest; "
+            "a SWHID is a sibling identifier, and a reader cannot recompute it from the bytes",
+        )
+    artifact = record.get("artifact")
+    digest = artifact.get("digest") if isinstance(artifact, dict) else None
+    if isinstance(digest, str) and digest.startswith("swh:"):
+        report.add(
+            "SWH-6",
+            "'artifact.digest' must be 'sha256:' over the artifact's bytes; a SWHID hashes "
+            "a different pre-image, header and algorithm included",
+        )
+
+    value = claim.get("swhid")
+    if not isinstance(value, str) or not value:
+        report.add("SWH-2", "'swhid' must carry one SWHID of scheme version 1")
+        return
+    if any(character.isspace() for character in value):
+        report.add("SWH-2", f"{value!r} contains whitespace: a SWHID is a token, not prose")
+        return
+    match = SWHID_PATTERN.fullmatch(value)
+    if match is None:
+        report.add(
+            "SWH-2",
+            f"{value!r} is not a SWHID of scheme version 1: expected 'swh:1:', an object type "
+            "('cnt', 'dir', 'rev', 'rel' or 'snp'), 40 lowercase hexadecimal digits, and "
+            "optional ';name=value' qualifiers",
+        )
+        return
+
+    object_type = match.group("type")
+    qualifiers: dict[str, str] = {}
+    for part in match.group("tail").split(";"):
+        if not part:
+            continue
+        name, separator, qualifier_value = part.partition("=")
+        if not separator or name not in SWHID_QUALIFIERS or not qualifier_value:
+            report.add(
+                "SWH-2",
+                f"{part!r} is not a SWHID qualifier: expected 'name=value' with a non-empty "
+                "value and a name among origin, visit, anchor, path, lines, bytes",
+            )
+            continue
+        if name in qualifiers:
+            report.add("SWH-4", f"qualifier {name!r} appears more than once; SWHID allows each at most once")
+            continue
+        qualifiers[name] = qualifier_value
+
+    fragments = sorted(set(qualifiers) & SWHID_FRAGMENT_QUALIFIERS)
+    if fragments:
+        report.add(
+            "SWH-5",
+            f"fragment qualifier {fragments[0]!r} narrows the SWHID to part of a content; a record "
+            "identifies one whole artifact, and a fragment belongs in a namespaced extension",
+        )
+
+    visit = qualifiers.get("visit")
+    if visit is not None:
+        if "origin" not in qualifiers:
+            report.add("SWH-4", "'visit' requires 'origin': a snapshot of branches has no meaning without its repository")
+        if not SWHID_SNAPSHOT_PATTERN.fullmatch(visit):
+            report.add("SWH-4", f"visit {visit!r} must be the core SWHID of a snapshot ('swh:1:snp:...')")
+
+    path = qualifiers.get("path")
+    if path is not None:
+        if object_type not in ("cnt", "dir"):
+            report.add("SWH-4", f"'path' is only valid for content and directory objects, not for a {object_type!r} object")
+        elif not path.startswith("/"):
+            report.add("SWH-4", f"path {path!r} must be absolute: a SWHID path names a location below a root directory")
+
+    anchor = qualifiers.get("anchor")
+    if anchor is not None:
+        if "path" not in qualifiers:
+            report.add("SWH-4", "'anchor' requires 'path': the anchor is the node the path is read from")
+        if not SWHID_ANCHOR_PATTERN.fullmatch(anchor):
+            report.add("SWH-4", f"anchor {anchor!r} must be the core SWHID of a directory, revision, release or snapshot")
+
+    origin = qualifiers.get("origin")
+    if origin is not None and not ABSOLUTE_URI_PATTERN.match(origin):
+        report.add("SWH-4", f"origin {origin!r} is not a URI: it must begin with a scheme such as 'https:'")
+
+
 def validate_record(record: Any, artifact: Path | None = None) -> Report:
     """Run every applicable rule and collect the findings."""
     report = Report()
@@ -636,6 +766,7 @@ def validate_record(record: Any, artifact: Path | None = None) -> Report:
     validate_declaration(record, report)
     validate_semver_bridge(record, report)
     validate_c2pa_bridge(record, report)
+    validate_swhid_bridge(record, report)
     return report
 
 
@@ -719,7 +850,7 @@ def build_graph(records: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, str,
 # Conformance suite (spec/07-conformance.md)
 # --------------------------------------------------------------------------- #
 
-RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P")
+RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P", "SWH")
 RULE_PATTERN = re.compile(r"\b(" + "|".join(RULE_FAMILIES) + r")-[0-9]+\b")
 
 

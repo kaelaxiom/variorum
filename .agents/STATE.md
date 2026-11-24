@@ -17,24 +17,25 @@
 - [x] `spec/07-conformance.md` — conformance targets, implementation levels, suite contract, coverage (`CON-1`…`CON-28`)
 - [x] `spec/90-extensions/semver.md` — the SemVer 2.0.0 bridge (`SEM-1`…`SEM-7`), opt-in per record
 - [x] `spec/90-extensions/c2pa.md` — the C2PA 2.2 bridge (`C2P-1`…`C2P-8`), a pointer to the manifest, opt-in per record
-- [x] `spec/vectors/` — 138 vectors in ten groups, real fixtures, `exemptions.json` with reasons
-- [x] `schema/variorum.schema.json` — JSON Schema 2020-12, including the `variorum:semver` and `variorum:c2pa` claim shapes
-- [x] `tools/variorum.py` — reference CLI 0.4.0 (validator, `conform` runner, SemVer and C2PA bridge checks, stdlib only)
+- [x] `spec/90-extensions/swhid.md` — the SWHID 1.2 bridge (`SWH-1`…`SWH-8`), a sibling identifier, opt-in per record
+- [x] `spec/vectors/` — 170 vectors in eleven groups, real fixtures, `exemptions.json` with reasons
+- [x] `schema/variorum.schema.json` — JSON Schema 2020-12, including the `variorum:semver`, `variorum:c2pa` and `variorum:swhid` claim shapes
+- [x] `tools/variorum.py` — reference CLI 0.5.0 (validator, `conform` runner, SemVer, C2PA and SWHID bridge checks, stdlib only)
 - [x] `examples/` — five real records in four directories
-- [x] `tests/` — 88 unit tests (validator + both bridges + vector-suite integrity + relative-link integrity)
+- [x] `tests/` — 103 unit tests (validator + three bridges + vector-suite integrity + relative-link integrity)
 - [x] `.github/workflows/ci.yml` — tests, conformance with coverage, examples on Python 3.11/3.13
-- [x] ADRs 0001–0011
+- [x] ADRs 0001–0012
 
 ## Verified on the last session
 
-- `python3 -m unittest discover -s tests` → 88 tests OK.
-- `python3 tools/variorum.py conform --coverage` → 138/138 PASS; 84/117 rules referenced, 33 exempt, 0 uncovered.
+- `python3 -m unittest discover -s tests` → 103 tests OK.
+- `python3 tools/variorum.py conform --coverage` → 170/170 PASS; 90/125 rules referenced, 35 exempt, 0 uncovered.
 - All five records under `examples/*/*.variorum.json` validate.
-- The C2PA bridge was written against the C2PA 2.2 specification and the citations were checked there, not recalled: the active manifest is the last manifest in the store (§15.5.1), the manifest store is *normally* an excluded range rather than a mandated one (§9.1, §9.2), and external stores are served as `application/c2pa` (§11.4).
+- The SWHID bridge was written against SWHID 1.2 and its arithmetic was recomputed, not recalled: on the 111-byte `hello.txt` fixture the three hashes are `a370e4f1…` (SHA-256, the digest), `affa1e6d…` (raw SHA-1, used by nothing) and `bad480af…` (SHA-1 over `blob 111\0` + bytes, the `cnt` SWHID — `git hash-object` prints the same digits). No SWHID can be the digest: the pre-images differ.
 
 ## What does not exist yet
 
-- [ ] Extension bridges: SWHID, SPDX, PROV (Phase 2)
+- [ ] Extension bridges: SPDX, PROV (Phase 2)
 - [ ] Worked adoption guide (`docs/adoption.md`)
 - [ ] Published site (no domain assigned)
 - [ ] Registration in `u-onoma` and `_index`
@@ -42,4 +43,4 @@
 
 ## Next
 
-See [HANDOFF.md](HANDOFF.md). The next bridge is SWHID: unlike C2PA, a SWHID *is* a content hash, so the interesting question is whether a SWHID can be a Variorum digest or only a sibling identifier — answer that before writing rules.
+See [HANDOFF.md](HANDOFF.md). The next bridge is SPDX: the question a record has to answer is not "what is inside" (the BOM owns that) but "which artifact does this BOM describe, and can the two disagree without either being wrong?" Answer that before writing rules.

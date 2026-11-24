@@ -1,0 +1,585 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "swhid",
+  "description": "Rules from spec/90-extensions/swhid.md: the opt-in bridge that cites a Software Heritage identifier (SWH-1..SWH-6). Every vector names the bridge it exercises (CON-28), so an implementation that does not claim it skips them. SWH-7 and SWH-8 are consumer obligations and are exempted in exemptions.json. The base claim is the true SWHID of fixtures/hello.txt, recomputed by tests/test_validate.py so that it cannot go stale.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": {
+      "name": "none"
+    },
+    "created": "2026-11-22T12:00:00-06:00",
+    "extensions": {
+      "variorum:swhid": {
+        "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871"
+      }
+    }
+  },
+  "vectors": [
+    {
+      "name": "swhid/claim-must-be-an-object",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A bare identifier leaves no room for future bridge metadata and cannot be distinguished from a string another extension might define.",
+      "rules": ["SWH-1"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871"
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-1"]
+      }
+    },
+    {
+      "name": "swhid/claim-must-not-be-null",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "JSON null is not an object and not an absent member: a record that writes the key with no claim is rejected, exactly as the schema types it.",
+      "rules": ["SWH-1"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": null
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-1"]
+      }
+    },
+    {
+      "name": "swhid/swhid-is-required",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A claim that names no identifier points at nothing; the SWHID is the only thing this bridge records.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {}
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/core-identifier-must-have-forty-hex-digits",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The fourth field of a core identifier is 40 hexadecimal digits (§4); a truncated hash names nothing.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/scheme-version-must-be-one",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The grammar defines scheme version 1 only (§4). A future version would need its own bridge revision, not a lenient parser.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:2:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/object-type-must-be-known",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The five object types are closed (§5.1); 'blob' is git's word for the object, not a SWHID type tag.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:blob:bad480af921edbabd43ecf18df4362aa3c3ae871"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/hex-digits-must-be-lowercase",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "SWHID's grammar admits only 'a'-'f' (§4) and the reference implementation emits lowercase, so grammar and ecosystem agree here, unlike the C2PA URN.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:BAD480AF921EDBABD43ECF18DF4362AA3C3AE871"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/whitespace-is-not-part-of-the-grammar",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "An identifier is a token; a trailing space means the value was pasted from prose and is not the identifier the archive emitted.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871 "
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/qualifier-names-are-closed",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The grammar defines six qualifier names (§6.2, §6.3); an unknown name is not a SWHID qualifier, and accepting it would let a record carry unchecked claims.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;collection=swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/qualifier-must-have-a-value",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A qualifier is a key/value pair; an empty value carries no information and §6.5 recommends omitting a redundant qualifier rather than emptying it.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;origin="
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-2"]
+      }
+    },
+    {
+      "name": "swhid/visit-requires-origin",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A visit names a snapshot of a specific origin; without the origin the reference has no meaning (§6.3.3).",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;visit=swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/visit-must-name-a-snapshot",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The visit qualifier is the core identifier of a snapshot (§6.3.3); a revision there names the wrong kind of object.",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;origin=https://github.com/darktable-org/darktable.git;visit=swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/path-is-only-valid-for-contents-and-directories",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A path locates a content or a directory inside a tree; on a revision it is ignored by SWHID (§6.3.4), and a producer must not generate it (§6.1).",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d;path=/src"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/path-must-be-absolute",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The grammar takes an ipath-absolute from RFC 3987 (§4); a relative path has no root to be read from.",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;path=src/main.c"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/anchor-requires-path",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The anchor is the node a path is relative to; alone it designates nothing (§6.3.5).",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;anchor=swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/anchor-must-not-be-a-content",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "An anchor is a directory, revision, release or snapshot (§6.3.5); a content has no root directory from which to read a path.",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;path=/main.c;anchor=swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/qualifiers-must-not-repeat",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "Each qualifier appears at most once (§6.2.1, §6.3.1); two origins would make the observation ambiguous.",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;origin=https://github.com/a/b.git;origin=https://github.com/c/d.git"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/origin-must-be-a-uri",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "An origin is a URI as RFC 3986 defines one (§6.3.2); a bare host name says where to guess, not where the object was observed.",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;origin=github.com/darktable-org/darktable"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-4"]
+      }
+    },
+    {
+      "name": "swhid/fragment-lines-is-forbidden",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A record identifies one artifact (ID-9); lines 9-15 are a fragment of it, not it, and the claim would leave the record's subject ambiguous.",
+      "rules": ["SWH-5"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;lines=9-15"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-5"]
+      }
+    },
+    {
+      "name": "swhid/fragment-bytes-is-forbidden",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "Same rule for the byte range: 'bytes' narrows a content the way 'lines' does (§6.2.3), and this bridge records whole artifacts only.",
+      "rules": ["SWH-5"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;bytes=154-315"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-5"]
+      }
+    },
+    {
+      "name": "swhid/the-claim-defines-one-member",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A resolver URL is derivable from the identifier; copying it into the claim creates a second statement that can disagree with the first.",
+      "rules": ["SWH-3"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871",
+            "resolver": "https://archive.softwareheritage.org/swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871/"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-3"]
+      }
+    },
+    {
+      "name": "swhid/id-must-not-be-a-swhid",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "Identity is the digest (ID-7, ID-8); a SWHID is stable across re-packaging, which is exactly why a reader cannot recompute it from the bytes.",
+      "rules": ["SWH-6"],
+      "patch": {
+        "id": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871"
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-6"]
+      }
+    },
+    {
+      "name": "swhid/digest-must-not-be-a-swhid",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A cnt SWHID hashes a blob header plus the bytes (§5.2), so recording it as artifact.digest states a hash of a different pre-image.",
+      "rules": ["SWH-6"],
+      "patch": {
+        "artifact": {
+          "digest": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SWH-6"]
+      }
+    },
+    {
+      "name": "swhid/minimal-content-claim-is-accepted",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "The base claim: the true SWHID of the fixture's bytes, with no qualifiers. One member, nothing copied.",
+      "rules": ["SWH-1", "SWH-2", "SWH-3"],
+      "patch": {},
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/directory-object-is-accepted",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A source tree is a directory object; the hex is the tree identifier SWHID's own specification publishes as an example (§5.3).",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/release-object-is-accepted",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A tag object is a release object (§5.5); this one is SWHID's published example of the Darktable 2.3.0 release.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/snapshot-object-is-accepted",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A snapshot object names a set of branch targets (§5.6); its type tag is accepted like any other.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/full-context-is-accepted",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "A directory with all four context qualifiers, in SWHID's canonical order: origin, visit, anchor, path (§6.5).",
+      "rules": ["SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505;origin=https://github.com/darktable-org/darktable.git;visit=swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453;anchor=swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d;path=/src"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/percent-encoded-semicolon-is-accepted",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "Section 4 requires ';' inside a value to be escaped as %3B, so splitting on ';' is unambiguous and the escape must survive untouched.",
+      "rules": ["SWH-2", "SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;origin=https://example.com/x%3By.git"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/path-case-is-not-normalised",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "Only the hexadecimal field is case-constrained; a path is a byte string and a validator that lowercased it would be over-strict.",
+      "rules": ["SWH-2", "SWH-4"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:bad480af921edbabd43ecf18df4362aa3c3ae871;path=/Src/MAIN.C"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/a-shape-valid-swhid-need-not-match-the-digest",
+      "class": "core",
+      "bridge": "variorum:swhid",
+      "description": "This record validator never sees the artifact's bytes, so it cannot relate a cnt SWHID to the digest. Checking that pair is SWH-7's consumer obligation, and rejecting here would be a false claim of verification.",
+      "rules": ["SWH-2"],
+      "patch": {
+        "extensions": {
+          "variorum:swhid": {
+            "swhid": "swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "swhid/a-record-without-the-claim-says-nothing",
+      "class": "core",
+      "description": "An unclaimed record for an artifact that happens to be archived is still a core record; the bridge is opt-in, and silence is not a denial.",
+      "rules": ["SWH-1", "SWH-2"],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        },
+        "scheme": {
+          "name": "none"
+        },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": {
+        "valid": true
+      }
+    }
+  ]
+}

@@ -10,14 +10,14 @@ Nothing here modifies the core specification. An extension may add keys under `e
 |---|---|---|
 | [semver.md](semver.md) | Semantic Versioning 2.0.0 | A project already versions its releases with SemVer. What exactly does the record claim, and where does a tag go? |
 | [c2pa.md](c2pa.md) | Content Credentials (C2PA 2.2) | A media file carries a signed C2PA manifest. Where does the Variorum record point, and which one is authoritative for what? |
+| [swhid.md](swhid.md) | Software Heritage identifier (SWHID 1.2, ISO/IEC 18670:2025) | A source tree has a SWHID. Is it a digest, a version, or something else — and what does the record therefore carry? |
 
-Both bridges are opt-in: the rules bind only records that carry the bridge's extension key (`extensions["variorum:semver"]`, `extensions["variorum:c2pa"]`), and the class model stays at four ([ADR-0009](../../docs/adr/ADR-0009-semver-bridge-is-opt-in.md)). The C2PA bridge additionally refuses to copy anything out of the manifest it points at ([ADR-0011](../../docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md)).
+All three bridges are opt-in: the rules bind only records that carry the bridge's extension key (`extensions["variorum:semver"]`, `extensions["variorum:c2pa"]`, `extensions["variorum:swhid"]`), and the class model stays at four ([ADR-0009](../../docs/adr/ADR-0009-semver-bridge-is-opt-in.md)). The C2PA bridge additionally refuses to copy anything out of the manifest it points at ([ADR-0011](../../docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md)); the SWHID bridge refuses to promote an identifier from another object model to the artifact's identity ([ADR-0012](../../docs/adr/ADR-0012-swhid-bridge-is-a-sibling-identifier.md)).
 
 ## Planned
 
 | File | Standard | Question it answers |
 |---|---|---|
-| `swhid.md` | Software Hash Identifier | A source tree has a SWHID. Does a Variorum record replace it, wrap it, or ignore it? |
 | `spdx.md` | SPDX / CycloneDX (SBOM, ML-BOM) | The BOM describes what is inside; Variorum describes the artifact. How are they cross-referenced? |
 | `prov.md` | W3C PROV | Variorum is a serialisation of a PROV subset. Which subset, and what is deliberately omitted? |
 
