@@ -26,6 +26,8 @@ That last point is the load-bearing one: **metadata cannot live inside the thing
 
 ```
 spec/        normative text, numbered sections, stable rule IDs
+spec/vectors/ conformance vectors, data not code
+spec/90-extensions/  bridges to adjacent standards, opt-in per record
 schema/      JSON Schema 2020-12, the machine-readable contract
 tools/       reference CLI, zero dependencies, stdlib only
 examples/    real records with real digests
@@ -33,6 +35,10 @@ docs/adr/    why each normative decision was taken
 ```
 
 The spec and the schema are two renderings of the same contract. Neither is allowed to drift from the other; a change in one is a change in both.
+
+## Bridges are claims, not classes
+
+A bridge to another standard (SemVer first; C2PA, SWHID, SPDX and PROV planned) never applies because of a scheme name. A record claims the bridge by carrying an extension key — `extensions["variorum:semver"]` — and the bridge's rules bind only that record. The claim is visible data, an unclaiming consumer ignores it as `CORE-3` requires, and the four conformance classes stay four (ADR-0009). Bridge rules are covered by vectors marked with the extension key (ADR-0010).
 
 ## Known tensions
 

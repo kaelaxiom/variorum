@@ -310,6 +310,71 @@ class ValidationTests(unittest.TestCase):
         )
 
 
+class SemverBridgeTests(unittest.TestCase):
+    """SEM-1..SEM-5 and SEM-7: the bridge binds only the records that claim it (ADR-0009)."""
+
+    def claimed(self, **scheme_overrides) -> dict:
+        scheme = {"name": "semver", "version": "1.4.2", "authority": "https://semver.org/spec/v2.0.0.html"}
+        scheme.update(scheme_overrides)
+        return record_with(scheme=scheme, extensions={"variorum:semver": {}})
+
+    def assert_rejected(self, record: dict, expected_rule: str) -> None:
+        report = variorum.validate_record(record)
+        rules = {issue.rule for issue in report.errors}
+        self.assertFalse(report.ok, "the record should have been rejected")
+        self.assertIn(expected_rule, rules, f"expected {expected_rule}, got {sorted(rules)}: {report.errors}")
+
+    def assert_accepted(self, record: dict) -> None:
+        report = variorum.validate_record(record)
+        self.assertTrue(report.ok, f"the record should have been accepted: {report.errors}")
+
+    def test_claim_must_be_an_object(self) -> None:
+        self.assert_rejected(record_with(extensions={"variorum:semver": "1.4.2"}), "SEM-1")
+
+    def test_claim_requires_the_semver_scheme(self) -> None:
+        record = record_with(scheme={"name": "custom", "version": "1.4.2"}, extensions={"variorum:semver": {}})
+        self.assert_rejected(record, "SEM-2")
+
+    def test_version_must_match_the_semver_grammar(self) -> None:
+        for version in ("v1.4.2", "1.4", "^1.4.2", "1.4.2 ", "1.4.2\n", "1.04.2", "latest"):
+            with self.subTest(version=version):
+                self.assert_rejected(self.claimed(version=version), "SEM-3")
+
+    def test_prerelease_build_and_zero_are_versions(self) -> None:
+        for version in ("1.4.2-rc.1", "1.4.2-rc.1+build.5", "0.0.0"):
+            with self.subTest(version=version):
+                self.assert_accepted(self.claimed(version=version))
+
+    def test_sequence_is_forbidden(self) -> None:
+        self.assert_rejected(self.claimed(sequence=3), "SEM-4")
+
+    def test_tag_must_end_with_the_precedence_part(self) -> None:
+        rejected = record_with(extensions={"variorum:semver": {"tag": "v1.4.1"}})
+        self.assert_rejected(rejected, "SEM-5")
+        empty = record_with(extensions={"variorum:semver": {"tag": ""}})
+        self.assert_rejected(empty, "SEM-5")
+        for tag in ("v1.4.2", "course/v1.4.2", "release-1.4.2"):
+            with self.subTest(tag=tag):
+                self.assert_accepted(record_with(extensions={"variorum:semver": {"tag": tag}}))
+
+    def test_a_tag_may_omit_build_metadata(self) -> None:
+        record = self.claimed(version="1.4.2+build.5")
+        record["extensions"]["variorum:semver"]["tag"] = "v1.4.2"
+        self.assert_accepted(record)
+
+    def test_without_the_claim_the_label_stays_opaque(self) -> None:
+        """SCH-7: 'semver' alone does not make the grammar a core rule."""
+        self.assert_accepted(record_with(scheme={"name": "semver", "version": "1.4"}))
+        self.assert_accepted(record_with(scheme={"name": "semver", "version": "1.4"}, extensions={"org.example:note": "x"}))
+
+    def test_authority_is_only_a_warning(self) -> None:
+        record = self.claimed()
+        del record["scheme"]["authority"]
+        report = variorum.validate_record(record)
+        self.assertTrue(report.ok, f"a missing authority must not invalidate the record: {report.errors}")
+        self.assertIn("SEM-7", {issue.rule for issue in report.warnings})
+
+
 class SeverityTests(unittest.TestCase):
     def test_warnings_do_not_make_a_report_fail(self) -> None:
         report = variorum.validate_record(record_with(extensions={"note": "x"}))

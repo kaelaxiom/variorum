@@ -1,0 +1,42 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:c40d573a4bbdfa17cdb6d5619c129868f753a46a82e87a3fa24adeb1fbcc1f6a",
+  "artifact": {
+    "digest": "sha256:c40d573a4bbdfa17cdb6d5619c129868f753a46a82e87a3fa24adeb1fbcc1f6a",
+    "size": 637290,
+    "mediaType": "application/pdf",
+    "name": "guide.pdf"
+  },
+  "scheme": {
+    "name": "semver",
+    "version": "1.3.1",
+    "authority": "https://semver.org/spec/v2.0.0.html"
+  },
+  "created": "2026-11-23T16:21:02-06:00",
+  "producer": {
+    "name": "hermes-agent",
+    "kind": "software",
+    "software": { "name": "hermes" }
+  },
+  "recipe": {
+    "kind": "build",
+    "source": {
+      "ref": "https://github.com/cazucito/instruisto",
+      "commit": "1360025026df2072059aeccd7f1b95c11d9652c1"
+    },
+    "tool": [
+      { "name": "typst", "version": "0.15.1" }
+    ],
+    "environment": {
+      "os": "ubuntu-latest",
+      "arch": "x64",
+      "workflow": ".github/workflows/compile.yml"
+    },
+    "determinism": "none",
+    "generatedAt": "2026-10-08T12:34:32-06:00"
+  },
+  "extensions": {
+    "variorum:conformance": ["core", "recipe"],
+    "variorum:semver": { "tag": "owasp-api-security/v1.3.1" }
+  }
+}

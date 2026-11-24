@@ -195,6 +195,17 @@
           "type": "array",
           "items": { "enum": ["core", "lineage", "recipe", "attestation"] },
           "description": "CON-5: the classes the record claims. CON-6 requires each declared class other than core to be backed by its member."
+        },
+        "variorum:semver": {
+          "type": "object",
+          "description": "SEM-1: the claim that this record's 'semver' label has been checked against the SemVer 2.0.0 bridge (spec/90-extensions/semver.md). Absence of this member means the label is opaque (SCH-7) and no bridge rule applies.",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "minLength": 1,
+              "description": "SEM-5: the release tag as published. It must end with the version's precedence part; that comparison needs scheme.version, so only the shape is expressed here."
+            }
+          }
         }
       }
     }

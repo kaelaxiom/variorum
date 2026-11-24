@@ -2,7 +2,15 @@
 
 Bridges between Variorum and adjacent standards. Each file states what the other standard does, what Variorum does, and how the two coexist without either absorbing the other.
 
-Nothing here modifies the core specification. An extension may add keys under `extensions`, and may define a mapping in both directions; it may not redefine a core member (`CORE-11`).
+Nothing here modifies the core specification. An extension may add keys under `extensions`, and may define a mapping in both directions; it may not redefine a core member (`CORE-11`) and may not add a MUST to a core section.
+
+## Written
+
+| File | Standard | Question it answers |
+|---|---|---|
+| [semver.md](semver.md) | Semantic Versioning 2.0.0 | A project already versions its releases with SemVer. What exactly does the record claim, and where does a tag go? |
+
+The SemVer bridge is opt-in: the rules bind only records that carry `extensions["variorum:semver"]`, and the class model stays at four ([ADR-0009](../../docs/adr/ADR-0009-semver-bridge-is-opt-in.md)).
 
 ## Planned
 
@@ -12,11 +20,11 @@ Nothing here modifies the core specification. An extension may add keys under `e
 | `swhid.md` | Software Hash Identifier | A source tree has a SWHID. Does a Variorum record replace it, wrap it, or ignore it? |
 | `spdx.md` | SPDX / CycloneDX (SBOM, ML-BOM) | The BOM describes what is inside; Variorum describes the artifact. How are they cross-referenced? |
 | `prov.md` | W3C PROV | Variorum is a serialisation of a PROV subset. Which subset, and what is deliberately omitted? |
-| `semver.md` | Semantic Versioning | A worked wrapping example that preserves SemVer precedence end to end. |
 
 ## Rules for writing one
 
 1. State what the other standard already guarantees. Do not re-specify it.
 2. Give the mapping in both directions, including the cases that do not map.
 3. Say which standard is authoritative for which question.
-4. Add a vector in `spec/vectors/` for every rule the bridge defines. `conform --coverage` fails on a rule that is neither exercised nor exempted with a reason (CON-24, CON-25).
+4. Make the bridge opt-in: define the extension key that claims it, and bind only the records that carry it. A bridge that applies implicitly to a scheme name makes core conformance stricter than `SCH-7` allows.
+5. Add a vector in `spec/vectors/` for every rule the bridge defines, carrying `"bridge": "<extension key>"` (CON-28). `conform --coverage` fails on a rule that is neither exercised nor exempted with a reason (CON-24, CON-25). See [ADR-0010](../../docs/adr/ADR-0010-bridge-rules-are-conformance-rules.md).

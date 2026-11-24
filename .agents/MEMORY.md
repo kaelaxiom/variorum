@@ -37,3 +37,15 @@ A vector that asserts a digest against a stored string can pass forever while th
 `conform --coverage` counts every rule identifier in `spec/00`–`spec/06` and fails when one is neither exercised nor exempted with a reason. The exemption list (30 rules) is the first honest map of what this format cannot verify from a file: producer honesty, consumer caution, storage retention, key material.
 
 **Lesson:** the exemptions are part of the standard's honesty, not a to-do list. Whenever a rule is exempted, the reason must say who the obligation falls on; "hard to test" is an admission that the rule is a preference and belongs in a SHOULD.
+
+## 2026-11-23 — A bridge that applies by name is a trap
+
+Applying the SemVer grammar whenever `scheme.name` is `semver` would have made `core` conformance stricter than `SCH-7` allows and retroactively invalidated labels a project already published. The fix was to make the bridge a claim — an extension key the record carries — so the rules bind only the records that asked for them.
+
+**Lesson:** when an extension sharpens a core member, the sharpening must be opt-in and visible in the record. A rule that fires on a name rather than on a claim silently changes what an existing record means.
+
+## 2026-11-23 — Adopting a foreign grammar costs two traps, not one
+
+Implementing SemVer's grammar from the published pattern exposed two host-language traps: Python's `\d` accepts any Unicode decimal digit (matching `١.٢.٣`), and `$` matches before a trailing newline, so `"1.4.2\n"` passed an anchored `match`. Both were caught by testing against the official valid/invalid example list, not by reading the pattern.
+
+**Lesson:** when a specification imports an external grammar, copy that standard's own conformance examples into the tests and run them before trusting the pattern. `re.ASCII` and `fullmatch` (or `\Z`) are the minimum defences in Python.

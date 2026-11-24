@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.2.0"
+TOOL_VERSION = "0.3.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -60,6 +60,25 @@ RECIPE_KINDS = {"manual", "build", "generative", "hybrid"}
 STATES = {"draft", "candidate", "approved", "published", "superseded", "rejected", "archived"}
 ACTOR_KINDS = {"human", "organization", "software"}
 ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
+
+# --------------------------------------------------------------------------- #
+# Extension bridges (spec/90-extensions/)
+# --------------------------------------------------------------------------- #
+
+SEMVER_BRIDGE = "variorum:semver"
+SEMVER_AUTHORITY = "https://semver.org/spec/v2.0.0.html"
+# The SemVer 2.0.0 grammar as the pattern published in the semver.org FAQ
+# (normative source: the BNF appendix), anchored. re.ASCII keeps
+# \d to [0-9]: SemVer is ASCII, and Python would otherwise accept any Unicode
+# decimal digit. Applied only to records that claim the bridge (ADR-0009);
+# every other record keeps the SCH-7 opacity.
+SEMVER_PATTERN = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
+    r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+    r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
+    re.ASCII,
+)
 
 # STA-10: legal lifecycle transitions.
 LEGAL_TRANSITIONS: dict[str, set[str]] = {
@@ -477,6 +496,56 @@ def validate_extensions(record: dict[str, Any], report: Report) -> None:
             report.warn("CORE-10", f"extension key '{key}' should be namespaced with a '<prefix>:<name>' form")
 
 
+def validate_semver_bridge(record: dict[str, Any], report: Report) -> None:
+    """SEM-1..SEM-5 and SEM-7 (spec/90-extensions/semver.md).
+
+    The bridge is opt-in: only a record carrying ``extensions["variorum:semver"]``
+    is held to these rules. Every other record keeps the SCH-7 opacity, so a
+    core implementation that does not implement this bridge is not affected.
+    """
+    extensions = record.get("extensions")
+    if not isinstance(extensions, dict):
+        return
+    claim = extensions.get(SEMVER_BRIDGE)
+    if claim is None:
+        return
+    if not isinstance(claim, dict):
+        report.add("SEM-1", "'variorum:semver' must be an object")
+        return
+
+    scheme = record.get("scheme")
+    scheme = scheme if isinstance(scheme, dict) else {}
+    name = scheme.get("name")
+    version = scheme.get("version")
+
+    if name != "semver":
+        report.add("SEM-2", f"a SemVer bridge claim requires scheme.name 'semver', found {name!r}")
+
+    if name == "semver":
+        if not isinstance(version, str):
+            report.add("SEM-3", "'scheme.version' must be present and carry a SemVer 2.0.0 version")
+        elif not SEMVER_PATTERN.fullmatch(version):
+            report.add(
+                "SEM-3",
+                f"'{version}' is not a SemVer 2.0.0 version: a range, a tag prefix, a partial version "
+                "and surrounding whitespace are not versions",
+            )
+        if scheme.get("authority") != SEMVER_AUTHORITY:
+            report.warn("SEM-7", f"a SemVer bridge record should name its authority: {SEMVER_AUTHORITY}")
+
+    if "sequence" in scheme:
+        report.add("SEM-4", "a SemVer bridge record must not carry 'scheme.sequence': SemVer defines the order")
+
+    tag = claim.get("tag")
+    if tag is not None:
+        if not isinstance(tag, str) or not tag or any(character.isspace() for character in tag):
+            report.add("SEM-5", "'tag' must be a non-empty string without whitespace")
+        elif isinstance(version, str):
+            precedence = version.split("+", 1)[0]
+            if not tag.endswith(precedence):
+                report.add("SEM-5", f"tag {tag!r} does not end with the release version {precedence!r}")
+
+
 def validate_record(record: Any, artifact: Path | None = None) -> Report:
     """Run every applicable rule and collect the findings."""
     report = Report()
@@ -493,6 +562,7 @@ def validate_record(record: Any, artifact: Path | None = None) -> Report:
     validate_attestation(record, report)
     validate_extensions(record, report)
     validate_declaration(record, report)
+    validate_semver_bridge(record, report)
     return report
 
 
@@ -576,7 +646,7 @@ def build_graph(records: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, str,
 # Conformance suite (spec/07-conformance.md)
 # --------------------------------------------------------------------------- #
 
-RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT")
+RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM")
 RULE_PATTERN = re.compile(r"\b(" + "|".join(RULE_FAMILIES) + r")-[0-9]+\b")
 
 
@@ -594,6 +664,7 @@ class Vector:
     records: list[Any] = field(default_factory=list)
     expect: dict[str, Any] = field(default_factory=dict)
     artifact: Path | None = None
+    bridge: str | None = None
 
 
 def default_vectors_dir() -> Path:
@@ -661,6 +732,15 @@ def load_vectors(directory: Path) -> tuple[list[Vector], list[Issue]]:
                 continue
 
             vector = Vector(name=name, group=group, class_name=class_name, kind=kind, source=path, rules=list(rules), expect=expect)
+
+            bridge = entry.get("bridge")
+            if bridge is not None:
+                if not isinstance(bridge, str) or ":" not in bridge:
+                    suite_errors.append(
+                        Issue("CON-28", f"{name}: 'bridge' must be the extension key the bridge defines, such as 'variorum:semver'")
+                    )
+                    continue
+                vector.bridge = bridge
 
             if kind == "graph":
                 records = entry.get("records")
@@ -787,9 +867,10 @@ def load_exemptions(path: Path) -> tuple[dict[str, str], list[Issue]]:
 
 
 def spec_rule_ids(spec_dir: Path) -> set[str]:
-    """Every record rule identifier defined in spec/00..06 (CON rules excluded)."""
+    """Every record rule identifier defined in spec/00..06 and its extension bridges (CON rules excluded)."""
+    paths = sorted(spec_dir.glob("*.md")) + sorted((spec_dir / "90-extensions").glob("*.md"))
     identifiers: set[str] = set()
-    for path in sorted(spec_dir.glob("*.md")):
+    for path in paths:
         identifiers.update(match.group(0) for match in RULE_PATTERN.finditer(path.read_text(encoding="utf-8")))
     return identifiers
 

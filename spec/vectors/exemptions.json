@@ -31,6 +31,7 @@
     "ATT-9": "Independent verification of several signatures requires the same key material as ATT-8.",
     "ATT-10": "Consumers must not infer endorsement between signers. Consumer behaviour.",
     "ATT-11": "A statement about what a signature does not establish. Semantics, not structure.",
-    "ATT-12": "Consumers must state what was verified. Consumer behaviour."
+    "ATT-12": "Consumers must state what was verified. Consumer behaviour.",
+    "SEM-6": "An ordering obligation on consumers: no record decides how records are compared, and equal precedence between two versions is not a property of either one alone."
   }
 }

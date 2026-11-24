@@ -154,17 +154,19 @@ A declaration is a claim, and a claim that can be false is worse than silence. `
 
 **CORE-11.** Extensions MUST NOT redefine the semantics of a core member.
 
+Bridges to adjacent standards live in `spec/90-extensions/`. A bridge may define keys under `extensions` and rules for the records that claim them; it may not add a MUST to any section above. The SemVer bridge is the first (`SEM-1`…`SEM-7` in [90-extensions/semver.md](90-extensions/semver.md)).
+
 ## 8. Relationship to existing standards
 
 | Standard | What it does | Variorum's relationship |
 |---|---|---|
-| **SemVer 2.0.0** | Ordering of compatibility deltas for APIs | Referenced as a scheme (`scheme.name = "semver"`); precedence untouched |
+| **SemVer 2.0.0** | Ordering of compatibility deltas for APIs | Referenced as a scheme (`scheme.name = "semver"`); precedence untouched. A bridge lets a record claim a verified label ([90-extensions/semver.md](90-extensions/semver.md)) |
 | **CalVer** | Date-based labels | Referenced as a scheme |
 | **PEP 440, Debian, RPM, NuGet, Maven** | Ecosystem-specific version ordering | Referenced as schemes; their comparison algorithms remain authoritative |
 | **SWHID** | Persistent content identifiers for software source code | Complementary: a SWHID may appear as an identifier inside `extensions`, and `artifact.digest` covers non-source artifacts SWHID does not address |
 | **C2PA / Content Credentials** | Signed provenance manifests embedded in media | Complementary: C2PA answers *what was done to these pixels*; Variorum answers *which artifact, in which state, derived from what*. An ADR records the mapping |
 | **SPDX / CycloneDX (SBOM, ML-BOM)** | Inventory of components | Complementary: the BOM describes what is inside the artifact; Variorum identifies the artifact and its place in a graph |
-| **W3C PROV** | Generic provenance model (entity, activity, agent) | Variorum is a concrete, minimal serialisation of a PROV subset for artifacts; alignment noted in `spec/90-extensions/prov.md` (planned) |
+| **W3C PROV** | Generic provenance model (entity, activity, agent) | Variorum is a concrete, minimal serialisation of a PROV subset for artifacts; the alignment is a planned extension bridge |
 | **SLSA / in-toto** | Supply-chain attestations for builds | Complementary; a SLSA attestation may be carried in `extensions` and referenced by `attestation` |
 | **AI Provenance Protocol (APP)** | Provenance for AI-generated content | Adjacent; APP describes generation, Variorum describes identity, lineage and lifecycle across all artifacts, AI or not |
 

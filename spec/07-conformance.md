@@ -45,7 +45,7 @@ Four levels, mirroring the record classes:
 
 Levels are not a ladder: an implementation may claim `recipe` without claiming `lineage`.
 
-**CON-9.** An implementation claiming level `L` MUST accept every accept vector whose class is `L` or `core`, and MUST reject every reject vector of those classes.
+**CON-9.** An implementation claiming level `L` MUST accept every accept vector whose class is `L` or `core`, and MUST reject every reject vector of those classes. A vector carrying `bridge` is required only of implementations that claim that bridge; every other implementation MUST skip it rather than fail it.
 
 **CON-10.** On a reject vector, the implementation MUST report at least one of the rule identifiers listed in the vector. Reporting additional rules is permitted.
 
@@ -79,6 +79,10 @@ Shallow means exactly that: a `patch` key replaces the whole value at that key. 
 
 **CON-22.** `kind`, when present, MUST be one of `record`, `graph`, `jcs`. When absent it is `record`.
 
+An extension bridge contributes vectors of its own. They live in the same suite and are marked so that a runner which does not implement the bridge can skip them honestly instead of failing them ([ADR-0010](../docs/adr/ADR-0010-bridge-rules-are-conformance-rules.md)).
+
+**CON-28.** A vector MAY carry `bridge`, naming the extension bridge it exercises. Its value MUST equal the extension key the bridge defines — for example `variorum:semver`. A bridge vector carries a `class` like any other, and is obligatory only for implementations that claim that bridge (`CON-9`).
+
 ## 7.5 Running the suite
 
 ```
@@ -87,11 +91,11 @@ python3 tools/variorum.py conform [--vectors <dir>] [--coverage] [--verbose]
 
 **CON-23.** The runner MUST exit `0` when every vector passes, `1` when any vector fails, and `2` when the suite itself is malformed or stale.
 
-`--coverage` additionally reports which rule identifiers of sections 00–06 are exercised by the suite and fails (exit `1`) when a rule is neither referenced nor exempted.
+`--coverage` additionally reports which rule identifiers of sections 00–06 and of the extension bridges under `spec/90-extensions/` are exercised by the suite and fails (exit `1`) when a rule is neither referenced nor exempted.
 
 ## 7.6 Coverage
 
-**CON-24.** Every rule identifier defined in `spec/00-overview.md` through `spec/06-attestation.md` MUST be referenced by at least one vector or listed in [`spec/vectors/exemptions.json`](vectors/exemptions.json).
+**CON-24.** Every rule identifier defined in `spec/00-overview.md` through `spec/06-attestation.md`, and every rule identifier defined by an extension bridge under `spec/90-extensions/`, MUST be referenced by at least one vector or listed in [`spec/vectors/exemptions.json`](vectors/exemptions.json).
 
 **CON-25.** An exemption MUST state a reason, and that reason MUST describe why no record can decide the rule — an obligation on a producer, a consumer, storage or a signing key. "Hard to test" is not a reason.
 

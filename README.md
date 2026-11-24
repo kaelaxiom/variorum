@@ -79,9 +79,10 @@ Conformance is not a compliment; it is a testable claim ([`spec/07-conformance.m
 python3 tools/variorum.py conform --coverage
 ```
 
-- [`spec/vectors/`](spec/vectors/) — 103 accept/reject/graph/canonicalisation vectors, each citing the rule it exercises.
+- [`spec/vectors/`](spec/vectors/) — 121 accept/reject/graph/canonicalisation vectors in nine groups, each citing the rule it exercises.
 - [`spec/vectors/exemptions.json`](spec/vectors/exemptions.json) — the rules no record can decide, each with a stated reason.
 - **Implementation levels:** `core`, `lineage`, `recipe`, `attestation`. Levels are not a ladder — an implementation may claim `recipe` without claiming `lineage`.
+- **Extension bridges:** [`spec/90-extensions/`](spec/90-extensions/) — adjacent standards Variorum coexists with. The first is SemVer ([`semver.md`](spec/90-extensions/semver.md)); a bridge is an opt-in claim and adds no MUST to `core`, so its vectors are required only of implementations that declare the bridge (`CON-28`).
 
 A validator that rejects a record for violating a **SHOULD** is wrong: SHOULD violations are warnings, never errors ([ADR-0005](docs/adr/ADR-0005-should-violations-are-warnings.md)).
 
@@ -99,7 +100,7 @@ docs/adr/              Decisions taken while designing the standard
 
 ## Status
 
-**Draft v0.1** — the specification is complete through section 07 and its conformance suite; nothing here is stable yet. See [CHANGELOG.md](CHANGELOG.md) and [.agents/STATE.md](.agents/STATE.md).
+**Draft v0.1** — the specification is complete through section 07 and its conformance suite; the SemVer bridge is the first extension and the others are planned. Nothing here is stable yet. See [CHANGELOG.md](CHANGELOG.md) and [.agents/STATE.md](.agents/STATE.md).
 
 ## Licence
 

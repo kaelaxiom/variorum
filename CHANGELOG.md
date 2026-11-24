@@ -6,6 +6,13 @@ All notable changes to the Variorum specification. Format loosely based on Keep 
 
 ### Added
 
+- `spec/90-extensions/semver.md` — the first extension bridge (`SEM-1`…`SEM-7`): an opt-in claim via `extensions["variorum:semver"]`, the SemVer 2.0.0 grammar, the tag-to-version mapping (`v1.3.1`, monorepo prefixes), the prohibition on `scheme.sequence`, and precedence left entirely to SemVer.
+- `spec/vectors/semver.json` — 18 vectors for the bridge (7 accept, 11 reject), including the over-strictness guard that an unclaimed `semver` label stays opaque.
+- `examples/instruisto-guide-owasp/` — a real release artifact (49-page PDF, 637,290 B, tag `owasp-api-security/v1.3.1`) wrapped unchanged; the digest was computed from the released bytes.
+- `CON-28` — vectors may carry `bridge`, the extension key of the bridge they exercise.
+- `docs/adr/ADR-0009-semver-bridge-is-opt-in.md` — a bridge binds only the records that claim it.
+- `docs/adr/ADR-0010-bridge-rules-are-conformance-rules.md` — bridge rules are covered like core rules, and bridge vectors are opt-in for implementations.
+- `SEM-1`…`SEM-7` in the reference validator; `TOOL_VERSION` 0.3.0.
 - `spec/07-conformance.md` — conformance targets for records and implementations, four implementation levels, the vector-suite contract and the coverage obligation (`CON-1`…`CON-27`).
 - `spec/vectors/` — 103 machine-readable vectors (30 accept, 70 reject, 3 graph/canonicalisation) in eight groups, plus `exemptions.json` with a stated reason for each rule no record can decide, and real fixtures whose digests are recomputed on every run.
 - `tools/variorum.py conform` — reference runner for the suite, `--vectors`, `--coverage` and `--verbose`; exit `0` pass, `1` failure, `2` malformed or stale suite.
@@ -19,6 +26,9 @@ All notable changes to the Variorum specification. Format loosely based on Keep 
 
 ### Changed
 
+- `CON-9` — a vector carrying `bridge` is obligatory only of implementations that claim that bridge; every other implementation skips it instead of failing it.
+- `CON-24` — coverage now counts every rule identifier defined under `spec/90-extensions/`, not only sections 00–06; `conform --coverage` and CI follow.
+- `schema/variorum.schema.json` — `extensions["variorum:semver"]` is now typed (an object, with an optional string `tag`), mirroring `SEM-1` and `SEM-5`.
 - `validate` now separates errors (violated MUST) from warnings (violated SHOULD); only errors make a record non-conformant. Checks affected: ID-12, CORE-10, REC-5, REC-12, SCH-10.
 - `scheme.name` accepts any lowercase name (SCH-2) in the schema and the reference tool; the previous closed enumeration rejected names the specification already allowed.
 - The two examples that declared `lineage` without carrying a `lineage` member now declare what they actually contain.

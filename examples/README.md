@@ -5,6 +5,7 @@ Real records from real artifacts. Every digest here was computed from the actual
 | Directory | Artifact | Teaches |
 |---|---|---|
 | [la-enpenso-shot-01](la-enpenso-shot-01/) | Two generative video takes, one rejected and one approved | Lineage, sibling semantics, generative recipe, terminal rejection |
+| [instruisto-guide-owasp](instruisto-guide-owasp/) | A released course guide PDF | Wrapping an existing SemVer label unchanged, the `v` and monorepo tag problem, a build recipe read from the artifact |
 | [software-tools-inventory](software-tools-inventory/) | A generated JSON report | Build recipe, a custom scheme wrapped unchanged, full lifecycle |
 | [du-vortoj-mark](du-vortoj-mark/) | A brand PNG | Core conformance only, `scheme: none`, declared limitations |
 

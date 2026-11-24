@@ -1,0 +1,243 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "semver",
+  "description": "Rules from spec/90-extensions/semver.md: the opt-in SemVer 2.0.0 bridge (SEM-1..SEM-5, SEM-7). Every vector names the bridge it exercises (CON-28), so an implementation that does not claim it skips them.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": {
+      "name": "semver",
+      "version": "1.4.2",
+      "authority": "https://semver.org/spec/v2.0.0.html"
+    },
+    "created": "2026-11-22T12:00:00-06:00",
+    "extensions": {
+      "variorum:semver": { "tag": "v1.4.2" }
+    }
+  },
+  "vectors": [
+    {
+      "name": "semver/claim-must-be-an-object",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "The claim is an object; a boolean says nothing about what was claimed.",
+      "rules": ["SEM-1"],
+      "patch": { "extensions": { "variorum:semver": true } },
+      "expect": { "valid": false, "rules": ["SEM-1"] }
+    },
+    {
+      "name": "semver/claim-requires-the-scheme",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "Claiming the SemVer bridge on a record whose scheme is not semver contradicts itself.",
+      "rules": ["SEM-2"],
+      "patch": {
+        "scheme": { "name": "custom", "version": "1.4.2" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-2"] }
+    },
+    {
+      "name": "semver/version-rejects-a-tag-prefix",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "'v1.4.2' is a tag, which SemVer's own FAQ distinguishes from a version.",
+      "rules": ["SEM-3"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "v1.4.2", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-3"] }
+    },
+    {
+      "name": "semver/version-rejects-a-partial-version",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A SemVer version has three numbers; '1.4' is not one.",
+      "rules": ["SEM-3"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "1.4", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-3"] }
+    },
+    {
+      "name": "semver/version-rejects-a-range",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A range belongs to a package manager, not to SemVer; the record carries one version.",
+      "rules": ["SEM-3"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "^1.4.2", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-3"] }
+    },
+    {
+      "name": "semver/version-rejects-whitespace",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "Whitespace is not part of the grammar, and trimming would be a normalisation (SCH-7).",
+      "rules": ["SEM-3"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "1.4.2 ", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-3"] }
+    },
+    {
+      "name": "semver/version-rejects-a-trailing-newline",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A regex end anchor may match before a newline; the grammar must consume the whole value, so '1.4.2\\n' is not a version.",
+      "rules": ["SEM-3"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "1.4.2\n", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-3"] }
+    },
+    {
+      "name": "semver/version-rejects-a-leading-zero",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "'1.04.2' violates the numeric-identifier rule; accepting it would make two strings compare differently than they look.",
+      "rules": ["SEM-3"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "1.04.2", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": {} }
+      },
+      "expect": { "valid": false, "rules": ["SEM-3"] }
+    },
+    {
+      "name": "semver/version-accepts-prerelease-and-build",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A prerelease with build metadata is a full SemVer version and is carried verbatim.",
+      "rules": ["SEM-3", "SEM-5"],
+      "patch": {
+        "scheme": {
+          "name": "semver",
+          "version": "1.4.2-rc.1+build.5",
+          "authority": "https://semver.org/spec/v2.0.0.html"
+        },
+        "extensions": { "variorum:semver": { "tag": "v1.4.2-rc.1" } }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "semver/version-accepts-zero",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "Zero is a version; a project that starts at 0.0.0 is not doing anything wrong.",
+      "rules": ["SEM-3", "SEM-5"],
+      "patch": {
+        "scheme": { "name": "semver", "version": "0.0.0", "authority": "https://semver.org/spec/v2.0.0.html" },
+        "extensions": { "variorum:semver": { "tag": "v0.0.0" } }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "semver/sequence-is-forbidden",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "SemVer defines the order; a second ordering in scheme.sequence could contradict it (SCH-8).",
+      "rules": ["SEM-4"],
+      "patch": {
+        "scheme": {
+          "name": "semver",
+          "version": "1.4.2",
+          "sequence": 3,
+          "authority": "https://semver.org/spec/v2.0.0.html"
+        }
+      },
+      "expect": { "valid": false, "rules": ["SEM-4"] }
+    },
+    {
+      "name": "semver/tag-must-carry-the-version",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A tag naming a different version contradicts the version it sits next to.",
+      "rules": ["SEM-5"],
+      "patch": { "extensions": { "variorum:semver": { "tag": "v1.4.1" } } },
+      "expect": { "valid": false, "rules": ["SEM-5"] }
+    },
+    {
+      "name": "semver/tag-rejects-whitespace",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "Git refs cannot contain spaces; a 'tag' that does is not a tag.",
+      "rules": ["SEM-5"],
+      "patch": { "extensions": { "variorum:semver": { "tag": "v1.4.2 " } } },
+      "expect": { "valid": false, "rules": ["SEM-5"] }
+    },
+    {
+      "name": "semver/tag-accepts-a-project-prefix",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "Monorepo tags name the package before the version; the prefix is project policy and is preserved.",
+      "rules": ["SEM-5"],
+      "patch": { "extensions": { "variorum:semver": { "tag": "course/v1.4.2" } } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "semver/tag-omits-build-metadata",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A tag may carry the precedence part while the version carries build metadata; the tag still matches.",
+      "rules": ["SEM-3", "SEM-5"],
+      "patch": {
+        "scheme": {
+          "name": "semver",
+          "version": "1.4.2+build.5",
+          "authority": "https://semver.org/spec/v2.0.0.html"
+        },
+        "extensions": { "variorum:semver": { "tag": "v1.4.2" } }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "semver/authority-is-only-recommended",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "A missing authority is a warning, not a rejection (ADR-0005): the record still conforms.",
+      "rules": ["SEM-7"],
+      "patch": { "scheme": { "name": "semver", "version": "1.4.2" } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "semver/empty-claim-is-accepted",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "The claim object may be empty when the project publishes no tag to map.",
+      "rules": ["SEM-1", "SEM-7"],
+      "patch": { "extensions": { "variorum:semver": {} } },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "semver/unclaimed-record-stays-opaque",
+      "class": "core",
+      "description": "Without the claim, 'semver' is just a scheme name and the label stays opaque (SCH-7); no bridge rule applies, and no bridge implementation is needed to pass this vector.",
+      "rules": ["SEM-1", "SEM-2", "SEM-3"],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        },
+        "scheme": { "name": "semver", "version": "1.4" },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": { "valid": true }
+    }
+  ]
+}

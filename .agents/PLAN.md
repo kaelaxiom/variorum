@@ -19,10 +19,10 @@
 
 ## Phase 2 — Interoperability
 
+- [x] `spec/90-extensions/semver.md` — a worked wrapping example with precedence preserved
 - [ ] `spec/90-extensions/c2pa.md` — how a Variorum record and a C2PA manifest coexist
 - [ ] `spec/90-extensions/swhid.md` — mapping to SWHID for source code
 - [ ] `spec/90-extensions/spdx.md` — SBOM/ML-BOM cross-reference
-- [ ] `spec/90-extensions/semver.md` — a worked wrapping example with precedence preserved
 
 ## Phase 3 — Adoption
 

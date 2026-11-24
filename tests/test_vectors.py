@@ -42,8 +42,19 @@ class SuiteIntegrityTests(unittest.TestCase):
 
     def test_every_group_is_present(self) -> None:
         groups = {vector.group for vector in self.vectors}
-        expected = {"core", "identity", "scheme", "lineage", "recipe", "state", "attestation", "conformance"}
+        expected = {"core", "identity", "scheme", "lineage", "recipe", "state", "attestation", "conformance", "semver"}
         self.assertEqual(groups, expected)
+
+    def test_bridge_vectors_name_a_written_bridge(self) -> None:
+        """CON-28: a bridge marker must point at a bridge the repository actually defines."""
+        bridges = {vector.bridge for vector in self.vectors if vector.bridge}
+        self.assertIn("variorum:semver", bridges)
+        documents = "\n".join(
+            path.read_text(encoding="utf-8") for path in sorted((ROOT / "spec" / "90-extensions").glob("*.md"))
+        )
+        for bridge in bridges:
+            with self.subTest(bridge=bridge):
+                self.assertIn(bridge, documents, f"{bridge} has vectors but no bridge document")
 
     def test_every_vector_passes(self) -> None:
         for vector in self.vectors:
