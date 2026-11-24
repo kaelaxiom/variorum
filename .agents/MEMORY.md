@@ -49,3 +49,21 @@ Applying the SemVer grammar whenever `scheme.name` is `semver` would have made `
 Implementing SemVer's grammar from the published pattern exposed two host-language traps: Python's `\d` accepts any Unicode decimal digit (matching `١.٢.٣`), and `$` matches before a trailing newline, so `"1.4.2\n"` passed an anchored `match`. Both were caught by testing against the official valid/invalid example list, not by reading the pattern.
 
 **Lesson:** when a specification imports an external grammar, copy that standard's own conformance examples into the tests and run them before trusting the pattern. `re.ASCII` and `fullmatch` (or `\Z`) are the minimum defences in Python.
+
+## 2026-11-24 — A citation is a claim like any other
+
+The C2PA draft carried two confident, well-formatted section references that were simply wrong: "the active manifest is the last one whose content bindings validate" (§15.5.1 says the last manifest in the store) and "the manifest store is one of the exclusions" (exclusions are a mechanism the claim generator may use, and a manifest may carry no hard binding at all). Neither error would have been caught by any test in this repository — both were prose about a document we do not own.
+
+**Lesson:** when a normative sentence summarises a foreign specification, open that specification and check the section before merging. A citation that looks precise is indistinguishable from a correct one until someone follows it.
+
+## 2026-11-24 — ABNF and ecosystem disagree; the bridge must accept both
+
+C2PA's ABNF for its URN allows only uppercase hex digits, yet the UUID string representations its own libraries produce (Java's `UUID.toString()`) are lowercase. A strict copy of the ABNF would reject pointers that real manifests carry. The same ABNF also allows colons inside the claim-generator component, so a regex that excludes them is silently over-strict.
+
+**Lesson:** for a foreign identifier, the accept side is defined by what the foreign ecosystem emits, not only by its grammar. Read the ABNF, then look at what an implementation actually writes — and put both cases in accept vectors.
+
+## 2026-11-24 — "Verbatim" is an untestable MUST
+
+`C2P-2` originally required the URN to be "recorded verbatim". No vector can check that: verification needs the manifest, which the record validator never sees. The requirement is real, but it is a producer obligation, so it belongs in prose, not in a rule the coverage report counts as tested.
+
+**Lesson:** any MUST whose truth depends on a document outside the record is a preference wearing a normative keyword. Keep the checkable shape as the rule; state the fidelity expectation as prose.

@@ -81,7 +81,7 @@ Shallow means exactly that: a `patch` key replaces the whole value at that key. 
 
 An extension bridge contributes vectors of its own. They live in the same suite and are marked so that a runner which does not implement the bridge can skip them honestly instead of failing them ([ADR-0010](../docs/adr/ADR-0010-bridge-rules-are-conformance-rules.md)).
 
-**CON-28.** A vector MAY carry `bridge`, naming the extension bridge it exercises. Its value MUST equal the extension key the bridge defines — for example `variorum:semver`. A bridge vector carries a `class` like any other, and is obligatory only for implementations that claim that bridge (`CON-9`).
+**CON-28.** A vector MAY carry `bridge`, naming the extension bridge it exercises. Its value MUST equal the extension key the bridge defines — for example `variorum:semver` or `variorum:c2pa`. A bridge vector carries a `class` like any other, and is obligatory only for implementations that claim that bridge (`CON-9`).
 
 ## 7.5 Running the suite
 

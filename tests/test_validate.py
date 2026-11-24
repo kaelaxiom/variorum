@@ -375,6 +375,66 @@ class SemverBridgeTests(unittest.TestCase):
         self.assertIn("SEM-7", {issue.rule for issue in report.warnings})
 
 
+class C2paBridgeTests(unittest.TestCase):
+    """C2P-1..C2P-6: the bridge points at a manifest and binds only the records that claim it (ADR-0011)."""
+
+    URN = "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4"
+
+    def claimed(self, **claim) -> dict:
+        return record_with(extensions={"variorum:c2pa": {"manifest": self.URN, "location": "embedded", **claim}})
+
+    def assert_rejected(self, record: dict, expected_rule: str) -> None:
+        report = variorum.validate_record(record)
+        rules = {issue.rule for issue in report.errors}
+        self.assertFalse(report.ok, "the record should have been rejected")
+        self.assertIn(expected_rule, rules, f"expected {expected_rule}, got {sorted(rules)}: {report.errors}")
+
+    def assert_accepted(self, record: dict) -> None:
+        report = variorum.validate_record(record)
+        self.assertTrue(report.ok, f"the record should have been accepted: {report.errors}")
+
+    def test_claim_must_be_an_object(self) -> None:
+        for claim in ("urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4", None, []):
+            with self.subTest(claim=claim):
+                self.assert_rejected(record_with(extensions={"variorum:c2pa": claim}), "C2P-1")
+
+    def test_manifest_must_be_a_c2pa_urn(self) -> None:
+        for manifest in ("https://example.com/manifests/asset.c2pa", "urn:c2pa:manifest-1", "", "urn:c2pa:" + "z" * 36):
+            with self.subTest(manifest=manifest):
+                self.assert_rejected(self.claimed(manifest=manifest), "C2P-2")
+
+    def test_optional_urn_components_are_opaque(self) -> None:
+        for manifest in (self.URN + ":Acme", self.URN + ":Acme:2_1", self.URN + "::2_1", self.URN.lower()):
+            with self.subTest(manifest=manifest):
+                self.assert_accepted(self.claimed(manifest=manifest))
+
+    def test_location_is_required_and_closed(self) -> None:
+        self.assert_rejected(record_with(extensions={"variorum:c2pa": {"manifest": self.URN}}), "C2P-3")
+        self.assert_rejected(self.claimed(location="sidecar"), "C2P-3")
+
+    def test_external_manifest_requires_an_absolute_uri(self) -> None:
+        self.assert_rejected(self.claimed(location="external"), "C2P-4")
+        self.assert_rejected(self.claimed(location="external", uri="manifests/asset.c2pa"), "C2P-4")
+        self.assert_accepted(self.claimed(location="external", uri="https://example.com/manifests/asset.c2pa"))
+
+    def test_embedded_manifest_forbids_a_uri(self) -> None:
+        self.assert_rejected(self.claimed(uri="https://example.com/manifests/asset.c2pa"), "C2P-4")
+
+    def test_claim_defines_three_members(self) -> None:
+        self.assert_rejected(self.claimed(signer="Acme"), "C2P-5")
+
+    def test_id_stays_the_digest(self) -> None:
+        record = self.claimed()
+        record["id"] = self.URN
+        rules = {issue.rule for issue in variorum.validate_record(record).errors}
+        self.assertIn("C2P-6", rules, "the C2PA URN must never become the record's identity")
+        self.assertIn("ID-7", rules)
+
+    def test_without_the_claim_nothing_changes(self) -> None:
+        self.assert_accepted(record_with())
+        self.assert_accepted(record_with(extensions={"org.example:note": "x"}))
+
+
 class SeverityTests(unittest.TestCase):
     def test_warnings_do_not_make_a_report_fail(self) -> None:
         report = variorum.validate_record(record_with(extensions={"note": "x"}))

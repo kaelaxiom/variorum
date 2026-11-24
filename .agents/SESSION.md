@@ -120,3 +120,38 @@ Close the SemVer bridge session: the tree had been left uncommitted with one kno
 
 - C2PA bridge (next), then SWHID, SPDX, PROV.
 - Owner review and the transfer to `cazucito` remain owner decisions.
+
+---
+
+# SESSION — 2026-11-24 (Phase 2: C2PA bridge)
+
+## Objective
+
+Close the C2PA bridge the previous run had left in the tree and red: no ADR, no vector group in the test, no docs.
+
+## Done
+
+- Wrote `docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md`: reference (the chosen shape) against absorption, application by presence, and no bridge at all. Records that a signed statement cannot be copied into an unsigned sidecar without losing the property that made it worth having.
+- Verified the bridge's C2PA 2.2 citations against the published specification instead of trusting the draft. Two statements were wrong and are corrected: the active manifest is the last manifest in the store (§15.5.1), and the manifest store is normally — not mandatorily — an excluded range (§9.1, §9.2).
+- Rewrote `C2P-2`: the "recorded verbatim" MUST was untestable (no vector knows what C2PA emitted), so it moved to prose in 90.1 and the rule kept only the checkable shape. The shape check accepts both hex cases and a colon-bearing claim generator; two accept vectors pin the leniency, since C2PA's ABNF is uppercase-only while its libraries emit lowercase UUIDs.
+- `spec/vectors/c2pa.json` — 19 vectors (accept/reject), all marked `"bridge": "variorum:c2pa"` except the unclaimed-record accept vector; a rejected JSON `null` claim; `C2P-7`/`C2P-8` exempted with consumer-obligation reasons.
+- Schema typed for the claim; `validate_c2pa_bridge` in tool 0.4.0; `C2P` added to the rule families; `C2paBridgeTests` (9 tests) in `tests/test_validate.py`; `c2pa` group expected in `tests/test_vectors.py`.
+- Docs brought in line: README counts (138 vectors, ten groups), CHANGELOG, extensions README (c2pa moved to Written), vectors README, PLAN, CON-28 example, STATE, HANDOFF.
+
+## Numbers
+
+- 88 unit tests OK.
+- `conform --coverage`: 138/138 PASS; 84/117 rules referenced, 33 exempt, 0 uncovered.
+- Five example records validate.
+
+## Decisions
+
+- The bridge is a pointer: three members, nothing copied from the manifest (ADR-0011).
+- Identity is still the digest; the C2PA URN never becomes `id` (`C2P-6`).
+- The hard binding, ingredients and claim signature are non-mappings, written down as such.
+
+## Open
+
+- SWHID, SPDX, PROV bridges.
+- SemVer bridge still treats an explicit `null` claim as absent while the C2PA bridge rejects it; aligning needs a decision and a vector.
+- Owner review, transfer to `cazucito`, site domain.

@@ -9,14 +9,14 @@ Nothing here modifies the core specification. An extension may add keys under `e
 | File | Standard | Question it answers |
 |---|---|---|
 | [semver.md](semver.md) | Semantic Versioning 2.0.0 | A project already versions its releases with SemVer. What exactly does the record claim, and where does a tag go? |
+| [c2pa.md](c2pa.md) | Content Credentials (C2PA 2.2) | A media file carries a signed C2PA manifest. Where does the Variorum record point, and which one is authoritative for what? |
 
-The SemVer bridge is opt-in: the rules bind only records that carry `extensions["variorum:semver"]`, and the class model stays at four ([ADR-0009](../../docs/adr/ADR-0009-semver-bridge-is-opt-in.md)).
+Both bridges are opt-in: the rules bind only records that carry the bridge's extension key (`extensions["variorum:semver"]`, `extensions["variorum:c2pa"]`), and the class model stays at four ([ADR-0009](../../docs/adr/ADR-0009-semver-bridge-is-opt-in.md)). The C2PA bridge additionally refuses to copy anything out of the manifest it points at ([ADR-0011](../../docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md)).
 
 ## Planned
 
 | File | Standard | Question it answers |
 |---|---|---|
-| `c2pa.md` | Content Credentials | A media file carries a signed C2PA manifest. Where does the Variorum record point, and which one wins? |
 | `swhid.md` | Software Hash Identifier | A source tree has a SWHID. Does a Variorum record replace it, wrap it, or ignore it? |
 | `spdx.md` | SPDX / CycloneDX (SBOM, ML-BOM) | The BOM describes what is inside; Variorum describes the artifact. How are they cross-referenced? |
 | `prov.md` | W3C PROV | Variorum is a serialisation of a PROV subset. Which subset, and what is deliberately omitted? |

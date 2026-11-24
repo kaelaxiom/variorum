@@ -206,6 +206,38 @@
               "description": "SEM-5: the release tag as published. It must end with the version's precedence part; that comparison needs scheme.version, so only the shape is expressed here."
             }
           }
+        },
+        "variorum:c2pa": {
+          "type": "object",
+          "description": "C2P-1: the claim that this record points at a C2PA 2.2 manifest (spec/90-extensions/c2pa.md). The claim is a reference, never a copy of the manifest.",
+          "required": ["manifest", "location"],
+          "additionalProperties": false,
+          "properties": {
+            "manifest": {
+              "type": "string",
+              "pattern": "^urn:c2pa:[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?::[^\\s]{0,32}(?::[0-9]+_[0-9]+)?)?$",
+              "description": "C2P-2: the URN of the active manifest (C2PA 2.2 §8.1): the urn:c2pa: namespace, a UUID, and C2PA’s optional components, which this bridge does not parse."
+            },
+            "location": {
+              "enum": ["embedded", "external"],
+              "description": "C2P-3: whether the manifest store travels inside the artifact's bytes or beside them."
+            },
+            "uri": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:",
+              "description": "C2P-4: where an external manifest store is retrievable, as an absolute URI reference."
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "location": { "const": "external" } }, "required": ["location"] },
+              "then": { "required": ["uri"] }
+            },
+            {
+              "if": { "properties": { "location": { "const": "embedded" } }, "required": ["location"] },
+              "then": { "not": { "required": ["uri"] } }
+            }
+          ]
         }
       }
     }

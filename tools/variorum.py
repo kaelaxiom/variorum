@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.3.0"
+TOOL_VERSION = "0.4.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -79,6 +79,24 @@ SEMVER_PATTERN = re.compile(
     r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
     re.ASCII,
 )
+
+C2PA_BRIDGE = "variorum:c2pa"
+C2PA_MEMBERS = {"manifest", "location", "uri"}
+# C2PA 2.2 §8.1: urn:c2pa:<UUID>[:<claim generator>[:<version>_<reason>]].
+# The UUID is matched in either hexadecimal case: the C2PA examples are
+# uppercase, but the UUID string representations that C2PA libraries produce
+# (Java's UUID.toString(), for one) are lowercase. The record stores the URN
+# exactly as C2PA emitted it, so no normalisation of case is performed.
+# The optional claim-generator component is opaque here: C2PA allows up to 32
+# visible characters other than space, colons included, so it is matched as a
+# run of non-whitespace rather than parsed.
+C2PA_URN_PATTERN = re.compile(
+    r"^urn:c2pa:[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"
+    r"(?::[^\s]{0,32}(?::[0-9]+_[0-9]+)?)?$"
+)
+# RFC 3986 absolute URI: a scheme, then whatever the scheme allows.
+ABSOLUTE_URI_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+
 
 # STA-10: legal lifecycle transitions.
 LEGAL_TRANSITIONS: dict[str, set[str]] = {
@@ -546,6 +564,60 @@ def validate_semver_bridge(record: dict[str, Any], report: Report) -> None:
                 report.add("SEM-5", f"tag {tag!r} does not end with the release version {precedence!r}")
 
 
+def validate_c2pa_bridge(record: dict[str, Any], report: Report) -> None:
+    """C2P-1..C2P-6 (spec/90-extensions/c2pa.md).
+
+    The claim is a pointer to a C2PA manifest, never a copy of it. Only records
+    carrying ``extensions["variorum:c2pa"]`` are held to these rules; a record
+    for an artifact that happens to carry a manifest, without the claim, says
+    nothing about it (ADR-0011).
+    """
+    extensions = record.get("extensions")
+    if not isinstance(extensions, dict):
+        return
+    if C2PA_BRIDGE not in extensions:
+        return
+    claim = extensions[C2PA_BRIDGE]
+    if not isinstance(claim, dict):
+        report.add("C2P-1", "'variorum:c2pa' must be an object")
+        return
+
+    manifest = claim.get("manifest")
+    if not isinstance(manifest, str) or not manifest:
+        report.add("C2P-2", "'manifest' must carry the urn:c2pa: URN of the active manifest")
+    elif not C2PA_URN_PATTERN.fullmatch(manifest):
+        report.add(
+            "C2P-2",
+            f"{manifest!r} is not a urn:c2pa: URN: expected 'urn:c2pa:' followed by a UUID, "
+            "with the optional claim-generator and version-reason components C2PA defines",
+        )
+
+    location = claim.get("location")
+    if location not in ("embedded", "external"):
+        report.add("C2P-3", "'location' must be 'embedded' or 'external'")
+
+    uri = claim.get("uri")
+    if location == "external":
+        if uri is None:
+            report.add("C2P-4", "an external manifest requires 'uri': without it the manifest cannot be located")
+        elif not isinstance(uri, str) or not ABSOLUTE_URI_PATTERN.match(uri):
+            report.add("C2P-4", f"{uri!r} is not an absolute URI reference")
+    elif location == "embedded" and "uri" in claim:
+        report.add("C2P-4", "an embedded manifest must not carry 'uri': the bytes carry the manifest")
+
+    unknown = sorted(set(claim) - C2PA_MEMBERS)
+    if unknown:
+        report.add("C2P-5", f"the C2PA claim defines 'manifest', 'location' and 'uri' only; found {unknown}")
+
+    record_id = record.get("id")
+    if isinstance(record_id, str) and record_id.startswith("urn:c2pa:"):
+        report.add(
+            "C2P-6",
+            "'id' must stay the urn:variorum: identifier derived from artifact.digest; "
+            "the C2PA URN belongs in extensions['variorum:c2pa'].manifest",
+        )
+
+
 def validate_record(record: Any, artifact: Path | None = None) -> Report:
     """Run every applicable rule and collect the findings."""
     report = Report()
@@ -563,6 +635,7 @@ def validate_record(record: Any, artifact: Path | None = None) -> Report:
     validate_extensions(record, report)
     validate_declaration(record, report)
     validate_semver_bridge(record, report)
+    validate_c2pa_bridge(record, report)
     return report
 
 
@@ -646,7 +719,7 @@ def build_graph(records: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, str,
 # Conformance suite (spec/07-conformance.md)
 # --------------------------------------------------------------------------- #
 
-RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM")
+RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P")
 RULE_PATTERN = re.compile(r"\b(" + "|".join(RULE_FAMILIES) + r")-[0-9]+\b")
 
 

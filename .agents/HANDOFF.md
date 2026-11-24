@@ -1,6 +1,29 @@
 # HANDOFF
 
-## Last session — 2026-11-23 (evening, close-out)
+## Last session — 2026-11-24 (Phase 2: C2PA bridge)
+
+**Did:** closed the C2PA bridge the previous run had left uncommitted and red.
+
+- `spec/90-extensions/c2pa.md` (`C2P-1`…`C2P-8`): a record claims the bridge with `extensions["variorum:c2pa"]`, an object with exactly `manifest` (the `urn:c2pa:` URN of the active manifest), `location` (`embedded`/`external`) and `uri` (required iff external, forbidden otherwise). Nothing is copied out of the manifest. Identity stays the digest (`C2P-6`); the hard binding, ingredients and claim signature are written down as non-mappings (90.3, 90.6, 90.7).
+- Verified every C2PA citation against the 2.2 specification before merging. Two statements inherited from the draft were wrong and are fixed: the active manifest is the **last manifest in the store** (§15.5.1), not "the last one whose bindings validate"; and the manifest store is **normally** an excluded range, not a mandated one (§9.1 allows a manifest with no hard binding at all, and exclusions are the mechanism, not a requirement).
+- Removed an untestable MUST: `C2P-2` no longer says the URN is "recorded verbatim" as a rule — that is prose in 90.1, because no vector can know what C2PA emitted. What remains normative is the shape: namespace, UUID, and an opaque optional tail.
+- The URN shape check accepts both hexadecimal cases and a claim-generator containing colons. C2PA's ABNF allows colons in that component and its HEXDIG is uppercase-only, but real libraries emit lowercase UUIDs (Java's `UUID.toString()`), so the bridge is lenient on input and never re-cases the stored value. Two accept vectors pin this.
+- `spec/vectors/c2pa.json` — 19 vectors, marked `"bridge": "variorum:c2pa"`, including the over-strictness guards above and a rejected JSON `null` claim. `C2P-7`/`C2P-8` exempted with reasons (consumer obligations).
+- `docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md` — why the bridge points instead of absorbing signed content into an unsigned sidecar.
+- Schema: `extensions["variorum:c2pa"]` typed (`additionalProperties: false`, `location` enum, conditional `uri`); the `manifest` pattern kept byte-for-byte in step with the tool's regex.
+- Tool 0.4.0 (`validate_c2pa_bridge`, `C2P` rule family); `tests/test_validate.py` gains `C2paBridgeTests` (9 tests); `tests/test_vectors.py` expects the `c2pa` group; README, CHANGELOG, PLAN, extension and vector READMEs updated.
+
+**Verified:** 88 unit tests OK; `conform --coverage` 138/138 PASS, 84/117 referenced, 33 exempt, 0 uncovered; five examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, and still the only blocker on a public announcement.
+- SWHID next. It is the opposite case to C2PA: a SWHID is itself a content hash with its own object-type prefixes (`swh:1:cnt:…`), so the decision to make is whether it may ever stand in for `artifact.digest` (probably not: different algorithm family, different preimage rules) and what the bridge therefore records.
+- Consistency item: `C2P-1` rejects an explicit JSON `null` under the claim key, because the record wrote the key; the SemVer bridge still treats `null` as absent and returns early. The schema types both claims as objects, so the tool is now stricter than the SemVer check. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line, so it was not done here.
+- `conform --verbose` still has no "skipped bridge vector" report (it never had; the reference runner implements every bridge).
+- `extensions["variorum:semver"].tag` still holds one tag per record.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-23 (evening, close-out)
 
 **Did:** made the SemVer bridge durable. The tree had been left uncommitted by the previous run.
 

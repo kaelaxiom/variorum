@@ -19,6 +19,7 @@ python3 tools/variorum.py conform --coverage
 | `attestation.json` | signature shape, canonical bytes | ATT-1…ATT-7 |
 | `conformance.json` | the declaration itself | CON-5, CON-6, CORE-7 |
 | `semver.json` | the SemVer bridge, opt-in per record | SEM-1…SEM-5, SEM-7 |
+| `c2pa.json` | the C2PA bridge, opt-in per record | C2P-1…C2P-6 |
 | `exemptions.json` | rules no record can decide, with reasons | — |
 | `fixtures/` | real bytes for the digest rules | — |
 

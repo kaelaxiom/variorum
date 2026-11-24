@@ -6,6 +6,10 @@ All notable changes to the Variorum specification. Format loosely based on Keep 
 
 ### Added
 
+- `spec/90-extensions/c2pa.md` — the second extension bridge (`C2P-1`…`C2P-8`): a record points at the active C2PA 2.2 manifest by its `urn:c2pa:` URN and never copies the manifest's content; `location` says whether the manifest store is embedded or external (the digest means different things in each case); identity stays the digest, and the C2PA hard binding, ingredients and claim signature are written down as non-mappings rather than plausible conversions.
+- `spec/vectors/c2pa.json` — 19 vectors for the bridge, each marked `"bridge": "variorum:c2pa"`, including the over-strictness guards (lowercase UUID string representations, opaque optional URN components) and a rejected JSON `null` claim.
+- `docs/adr/ADR-0011-c2pa-bridge-references-the-manifest.md` — why the bridge points instead of absorbing signed content into an unsigned sidecar.
+- `C2P-1`…`C2P-6` in the reference validator; `TOOL_VERSION` 0.4.0.
 - `spec/90-extensions/semver.md` — the first extension bridge (`SEM-1`…`SEM-7`): an opt-in claim via `extensions["variorum:semver"]`, the SemVer 2.0.0 grammar, the tag-to-version mapping (`v1.3.1`, monorepo prefixes), the prohibition on `scheme.sequence`, and precedence left entirely to SemVer.
 - `spec/vectors/semver.json` — 18 vectors for the bridge (7 accept, 11 reject), including the over-strictness guard that an unclaimed `semver` label stays opaque.
 - `examples/instruisto-guide-owasp/` — a real release artifact (49-page PDF, 637,290 B, tag `owasp-api-security/v1.3.1`) wrapped unchanged; the digest was computed from the released bytes.
@@ -27,6 +31,7 @@ All notable changes to the Variorum specification. Format loosely based on Keep 
 ### Changed
 
 - `CON-9` — a vector carrying `bridge` is obligatory only of implementations that claim that bridge; every other implementation skips it instead of failing it.
+- `schema/variorum.schema.json` — `extensions["variorum:c2pa"]` is typed: an object with `manifest` and `location` required, `uri` required exactly when `location` is `external` and forbidden otherwise, and no members beyond the three the bridge defines.
 - `CON-24` — coverage now counts every rule identifier defined under `spec/90-extensions/`, not only sections 00–06; `conform --coverage` and CI follow.
 - `schema/variorum.schema.json` — `extensions["variorum:semver"]` is now typed (an object, with an optional string `tag`), mirroring `SEM-1` and `SEM-5`.
 - `validate` now separates errors (violated MUST) from warnings (violated SHOULD); only errors make a record non-conformant. Checks affected: ID-12, CORE-10, REC-5, REC-12, SCH-10.

@@ -1,0 +1,397 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "c2pa",
+  "description": "Rules from spec/90-extensions/c2pa.md: the opt-in bridge that points a record at a C2PA 2.2 manifest (C2P-1..C2P-6). Every vector names the bridge it exercises (CON-28), so an implementation that does not claim it skips them. C2P-7 and C2P-8 are consumer obligations and are exempted in exemptions.json.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": {
+      "name": "none"
+    },
+    "created": "2026-11-22T12:00:00-06:00",
+    "extensions": {
+      "variorum:c2pa": {
+        "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+        "location": "embedded"
+      }
+    }
+  },
+  "vectors": [
+    {
+      "name": "c2pa/claim-must-be-an-object",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "The claim is a pointer object; a bare URN string leaves no room for the location.",
+      "rules": [
+        "C2P-1"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4"
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-1"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/manifest-is-required",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "A claim that names no manifest points at nothing; without the URN the record cannot be checked against any manifest.",
+      "rules": [
+        "C2P-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "location": "embedded"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-2"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/manifest-must-be-a-c2pa-urn",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "A manifest is identified by C2PA's own URN namespace, not by a URL or a filename.",
+      "rules": [
+        "C2P-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "https://example.com/manifests/asset.c2pa",
+            "location": "embedded"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-2"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/manifest-uuid-must-have-the-uuid-shape",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "The namespace alone is not an identifier: the UUID component is the part that distinguishes one manifest from another.",
+      "rules": [
+        "C2P-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:manifest-1",
+            "location": "embedded"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-2"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/location-is-required",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "Whether the manifest travels inside the bytes or beside them changes what the digest covers, so it cannot be left implicit.",
+      "rules": [
+        "C2P-3"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-3"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/location-is-embedded-or-external",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "C2PA defines exactly two storage models for a manifest store; a third label would be a claim no implementation can act on.",
+      "rules": [
+        "C2P-3"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+            "location": "sidecar"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-3"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/external-manifest-needs-a-uri",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "An external manifest that names no location cannot be retrieved, so the claim is unverifiable in principle.",
+      "rules": [
+        "C2P-4"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+            "location": "external"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-4"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/external-uri-must-be-absolute",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "A relative path resolves against the reader's working directory, not against the record's author, so it does not locate anything.",
+      "rules": [
+        "C2P-4"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+            "location": "external",
+            "uri": "manifests/asset.c2pa"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-4"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/embedded-manifest-forbids-a-uri",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "An embedded manifest has one location — the bytes — and a second, possibly stale location would be a contradictable claim.",
+      "rules": [
+        "C2P-4"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+            "location": "embedded",
+            "uri": "https://example.com/manifests/asset.c2pa"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-4"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/claim-carries-only-the-three-members",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "Copying assertions into the record duplicates unsigned prose beside the signed manifest that already contains them.",
+      "rules": [
+        "C2P-5"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+            "location": "embedded",
+            "assertions": []
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-5"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/id-is-not-the-c2pa-urn",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "A UUID cannot be recomputed from the bytes, so promoting it to id would make the record unverifiable by its reader.",
+      "rules": [
+        "C2P-6"
+      ],
+      "patch": {
+        "id": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4"
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-6"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/embedded-manifest-is-accepted",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "The minimal claim: a URN and the fact that the manifest travels inside the bytes.",
+      "rules": [
+        "C2P-1",
+        "C2P-2",
+        "C2P-3"
+      ],
+      "patch": {},
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "c2pa/external-manifest-is-accepted",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "An external store served as application/c2pa, located by an absolute URI.",
+      "rules": [
+        "C2P-3",
+        "C2P-4"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4",
+            "location": "external",
+            "uri": "https://example.com/manifests/asset.c2pa"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "c2pa/urn-optional-components-are-accepted",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "C2PA allows a claim-generator and a version-reason after the UUID, and its claim-generator component may itself contain colons. The bridge stores the URN as C2PA emitted it and parses none of it, so the tail is opaque and accepted.",
+      "rules": [
+        "C2P-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4:Acme:Tools:2_1",
+            "location": "embedded"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "c2pa/urn-hex-case-is-accepted",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "C2PA's examples are uppercase, but UUID string representations emitted by libraries (Java's UUID.toString(), for one) are lowercase. The record keeps C2PA's label and never re-cases it, so both are accepted.",
+      "rules": [
+        "C2P-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": {
+            "manifest": "urn:c2pa:f9168c5e-ceb2-4faa-b6bf-329bf39fa1e4",
+            "location": "embedded"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "c2pa/claim-must-not-be-null",
+      "class": "core",
+      "bridge": "variorum:c2pa",
+      "description": "JSON null is not an object and not an absent member: a record that writes the key with no claim is rejected, exactly as the schema types it.",
+      "rules": [
+        "C2P-1"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:c2pa": null
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "C2P-1"
+        ]
+      }
+    },
+    {
+      "name": "c2pa/a-record-without-the-claim-says-nothing",
+      "class": "core",
+      "description": "An unclaimed record for an artifact that happens to carry a manifest is still a core record; the bridge is opt-in, and silence is not a denial.",
+      "rules": [
+        "C2P-1",
+        "C2P-2",
+        "C2P-3"
+      ],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        },
+        "scheme": {
+          "name": "none"
+        },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": {
+        "valid": true
+      }
+    }
+  ]
+}
