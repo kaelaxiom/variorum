@@ -1,0 +1,22 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:2605defcf2a7aafb6cb5bbdca017cc2639fa8fab81d00ac3a77dcbfa45e9fe19",
+  "artifact": {
+    "digest": "sha256:2605defcf2a7aafb6cb5bbdca017cc2639fa8fab81d00ac3a77dcbfa45e9fe19",
+    "size": 73506,
+    "mediaType": "application/pdf",
+    "name": "proposal.pdf"
+  },
+  "scheme": {
+    "name": "semver",
+    "version": "1.1.0"
+  },
+  "created": "2026-11-25T05:21:26-06:00",
+  "producer": {
+    "name": "cazucito",
+    "kind": "human"
+  },
+  "extensions": {
+    "variorum:conformance": ["core"]
+  }
+}

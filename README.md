@@ -31,7 +31,7 @@ A sidecar record — one JSON file, `variorum.json` — that travels with an art
 
 | Question | Field | Answer type |
 |----------|-------|-------------|
-| Which exact bytes is this? | `identity` | `sha256:…` |
+| Which exact bytes is this? | `artifact` (and the `id` derived from it) | `sha256:…` |
 | Which version scheme does the project use? | `scheme` | `semver:1.4.2`, `calver:2026.11`, `date:2024-06-20`, … |
 | Where did it come from? | `lineage` | a DAG of parents |
 | How was it produced? | `recipe` | build, generative or hybrid |
@@ -50,26 +50,81 @@ A sidecar record — one JSON file, `variorum.json` — that travels with an art
 
 ## Quick example
 
+One record, complete: [`examples/la-enpenso-shot-01/b0d1bfac8fc9.variorum.json`](examples/la-enpenso-shot-01/b0d1bfac8fc9.variorum.json), copied verbatim. The digests were computed from the bytes, nothing is elided, and `tests/test_docs.py` fails if this block stops matching the file it came from.
+
 ```json
 {
   "variorum": "0.1",
-  "id": "urn:variorum:sha256:3f9c…",
-  "artifact": { "digest": "sha256:3f9c…", "size": 2741182, "mediaType": "video/mp4" },
-  "scheme": { "name": "dv", "version": "dv-001", "authority": "https://du-vortoj.social-data.com" },
-  "lineage": { "relation": "generation", "parents": ["urn:variorum:sha256:8a11…"] },
+  "id": "urn:variorum:sha256:b0d1bfac8fc9e59be3525f2e4b973ea7017f31e2b35e49e5d6864c3979e941dd",
+  "artifact": {
+    "digest": "sha256:b0d1bfac8fc9e59be3525f2e4b973ea7017f31e2b35e49e5d6864c3979e941dd",
+    "size": 2683457,
+    "mediaType": "video/mp4",
+    "name": "discipline-gardan-001.es.video-shot-01.raw.mp4"
+  },
+  "scheme": {
+    "name": "x-la-enpenso-shot",
+    "version": "001",
+    "sequence": 2
+  },
+  "created": "2026-11-22T21:58:00-06:00",
+  "producer": {
+    "name": "hermes-agent",
+    "kind": "software",
+    "software": { "name": "hermes" }
+  },
+  "lineage": {
+    "parents": [
+      {
+        "id": "urn:variorum:sha256:b4b9ac719a3f127d887b1a4903c3c2c3f3248d4c3500b9b3621e3c2012dc28b8",
+        "relation": "revision",
+        "note": "Same intent, second attempt after the first take was rejected."
+      }
+    ]
+  },
   "recipe": {
     "kind": "generative",
-    "tool": { "name": "higgsfield", "model": "grok_video", "snapshot": "2026-11-20" },
-    "prompt": "…",
-    "seed": 41827,
-    "parameters": { "resolution": "1080x1920", "fps": 24, "duration_s": 15 }
+    "tool": {
+      "name": "higgsfield",
+      "model": "grok_video",
+      "snapshot": "2026-11-20"
+    },
+    "prompt": "Static camera, locked. A hand presses a brick onto the top course. No cuts, no zoom, no camera movement.",
+    "parameters": {
+      "resolution": "1080x1920",
+      "fps": 24,
+      "duration_s": 15,
+      "start_image": "R4-C1"
+    },
+    "determinism": "none",
+    "generatedAt": "2026-11-20T08:41:00-06:00"
   },
-  "state": { "current": "approved", "transitions": [
-    { "from": "candidate", "to": "approved", "actor": "cazucito", "at": "2026-11-20T16:51:54-06:00" }
-  ]},
-  "created": "2026-11-20T14:42:28-06:00"
+  "state": {
+    "current": "approved",
+    "transitions": [
+      {
+        "from": "draft",
+        "to": "candidate",
+        "actor": { "name": "hermes-agent", "kind": "software", "software": { "name": "hermes" } },
+        "at": "2026-11-20T08:43:00-06:00"
+      },
+      {
+        "from": "candidate",
+        "to": "approved",
+        "actor": { "name": "cazucito", "kind": "human" },
+        "at": "2026-11-20T16:51:54-06:00"
+      }
+    ]
+  },
+  "extensions": {
+    "variorum:conformance": ["core", "lineage", "recipe"]
+  }
 }
 ```
+
+`core` is the five members `variorum`, `id`, `artifact`, `scheme` and `created`; everything below `created` is a conformance class adopted because the project needed it. The scheme is one the project invented and Variorum does not interpret — and `determinism: "none"` is an honest answer, not a missing one.
+
+To adopt it for one artifact: [`docs/adoption.md`](docs/adoption.md).
 
 ## Conformance
 
@@ -94,6 +149,7 @@ spec/vectors/          Conformance vectors (data, not code)
 schema/                JSON Schema (2020-12) — normative for implementers
 tools/                 Reference CLI and conformance runner (Python, stdlib only)
 examples/              Real records from real projects
+docs/adoption.md       How to adopt it, on one real release
 docs/adr/              Decisions taken while designing the standard
 .agents/               Continuity protocol for agent sessions
 ```

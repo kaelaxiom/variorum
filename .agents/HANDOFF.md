@@ -1,6 +1,30 @@
 # HANDOFF
 
-## Last session — 2026-11-24 (Phase 2: SPDX bridge, and Phase 2 closed)
+## Last session — 2026-11-25 (Phase 3: the adoption guide, and the README's front door)
+
+**Did:** closed Phase 3's first task. `docs/adoption.md` and `examples/instruisto-release-copilot/` had been written the previous run but left uncommitted and unaudited; this session verified them against reality, fixed a real defect in the README, and shipped all three.
+
+- **The guide was re-walked, not re-read.** `gh release download github-copilot-agents/v1.1.0 -R cazucito/instruisto -p '*.pdf'` fetched both assets (73,506 B and 148,743 B; the release API reports the same sizes), and their SHA-256 values — `2605defcf2a7aafb…` and `60d62fe0bbe732bc…` — are exactly the digests the two records carry. `stamp syllabus.pdf --scheme semver 1.1.0 --media-type application/pdf --producer cazucito` reproduces `60d62fe0bbe7.variorum.json` member for member except `created`. The public asset URL still answers `404` with a nine-byte body, so pitfall 2 in the guide is a lived fact, not advice.
+- **`docs/adoption.md` tightened in two places.** Only `artifact.digest` is required inside `artifact` (`ID-2`); the table previously implied `size`, `mediaType` and `name` were part of the requirement, and now says which is which. §3 no longer claims `stamp` writes "the five required members and nothing else" — it also fills `artifact`'s descriptive members and writes `producer` when given one; what it never writes is a conformance declaration or an invented section.
+- **The README's Quick example was teaching a format the validator rejects.** It showed `lineage.parents` as an array of strings, `state.transitions[].actor` as a string, and truncated digests, so every reader who copied it got an invalid record in the most visible place in the repository. It is now the record shipped in `examples/la-enpenso-shot-01/`, copied verbatim: real digests, a real generative recipe with `determinism: "none"`, a real two-step lifecycle, and an unregistered scheme (`x-la-enpenso-shot`) wrapped untouched. Correction to the previous run's note: `recipe.tool` as an object was *not* a defect — `$defs/tool` allows `{name, model, snapshot}`; two of the three reported shapes were wrong and one was already legal.
+- **`tests/test_docs.py` — `ReadmeExampleTests`.** The README must carry exactly one ```json block, and it must equal, member for member, a record under `examples/`. Validity is not re-checked there because `ExamplesTests` validates the same bytes; the new test guards the copy, which is what drifted.
+- The field table's first row said `identity`, which is a section title and not a member; it now says `artifact` and the `id` derived from it.
+- `examples/README.md` gained the missing `instruisto-release-copilot` row (the directory existed; the index did not list it). CHANGELOG `Unreleased` gained three `Added` entries and one `Changed`; PLAN's Phase 3 first box is checked; STATE marked Phase 3.
+
+**Verified:** 114 unit tests OK; `conform --coverage` 188/188 PASS, 96/133 referenced, 37 exempt, 0 uncovered; all seven example records validate (the `software-tools-inventory` record still emits its pre-existing `REC-5` warning about tool version, which is a warning by `ADR-0005`).
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, and still the only blocker on a public announcement.
+- Phase 3's remaining work: **three case studies**, then the site, then the announcement. A case study is a project adopting the format in *its own* repository, not another record under `examples/`; `software-tools` is the natural first candidate because `ops/tools/downloads_inventory.py` already hashes release files, so the record can come out of the pipeline instead of from an editor.
+- `spec/90-extensions/prov.md` (W3C PROV) is still planned and unwritten — outside Phase 2's four boxes, still worth doing before 1.0.
+- Consistency item (open since the C2PA bridge, now three bridges disagree with SemVer): `C2P-1`, `SWH-1` and `SPDX-1` reject an explicit JSON `null` claim; `SEM-1` treats `null` as absent and returns early. The schema types all four claims as objects. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line.
+- `conform --verbose` still has no "skipped bridge vector" report (it never had; the reference runner implements every bridge).
+- `extensions["variorum:semver"].tag` still holds one tag per record.
+- `SPDX-7`'s comparison is stated, not performed: no tool command takes an SPDX document yet. If adoption asks for it, `variorum check-spdx <record> <document>` would be the honest place, and it must not become a second validator.
+- CycloneDX stays a separate bridge (`spec/90-extensions/README.md`, Planned).
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-24 (Phase 2: SPDX bridge, and Phase 2 closed)
 
 **Did:** wrote the fourth bridge and answered its handoff question with arithmetic: **an SPDX checksum can equal the digest, but only one kind of it can, and equality is never a licence to copy.**
 

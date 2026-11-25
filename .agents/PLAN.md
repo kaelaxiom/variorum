@@ -26,7 +26,7 @@
 
 ## Phase 3 — Adoption
 
-- [ ] `docs/adoption.md` — one-page guide, core-only path first
+- [x] `docs/adoption.md` — one-page guide, core-only path first
 - [ ] Adopt in three real repositories as case studies
 - [ ] Public site (domain not yet decided)
 - [ ] Announce

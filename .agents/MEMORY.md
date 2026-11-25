@@ -92,3 +92,21 @@ SPDX's package verification code (§7.9) is SHA-1 over the sorted concatenation 
 
 **Lesson:** before treating any "checksum" as comparable to a digest, read what its pre-image is built from. Equal-length hex is not equal subject, and a set hashed as text is the case where the two diverge most quietly.
 
+
+## 2026-11-25 — The storefront is the most-copied document, and no test reads prose
+
+The README's Quick example showed `lineage.parents` as an array of strings and `state.transitions[].actor` as a string — two shapes the validator rejects — so the first record many readers would write was invalid by construction. `validate` reads JSON, `conform` reads vectors, and link checking reads only links: nothing was ever going to notice.
+
+**Lesson:** the example on the front page is not prose, it is a template. Make it a record the repository already validates, and pin the copy with a test that fails on drift. A hand-written skeleton needs a second implementation of the format to stay true, and it never gets one.
+
+## 2026-11-25 — Verify a defect report before acting on it
+
+The previous run listed three broken shapes in the README. Two were real; the third — `recipe.tool` as an object — is exactly what `$defs/tool` allows, and "fixing" it would have broken a correct example. Reported defects are claims from a run that may have stopped early, not measurements.
+
+**Lesson:** check each claimed defect against the schema or the tool before editing. An audit finding that is wrong is more expensive than one that is missing, because acting on it damages working text.
+
+## 2026-11-25 — An uncommitted example is a claim, not a fact
+
+`docs/adoption.md` and `examples/instruisto-release-copilot/` sat in the tree from the previous run with plausible digests. Re-downloading both release assets and recomputing their SHA-256 cost two minutes and turned "the guide says so" into "the bytes say so"; the digests happened to match, which is exactly why the habit is cheap and the alternative is not.
+
+**Lesson:** before committing an example produced by an earlier run, re-derive its identity from the source. The expensive failure is not a wrong digest that gets caught — it is a wrong digest that gets published.

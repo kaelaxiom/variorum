@@ -229,3 +229,38 @@ Close Phase 2 with its fourth bridge, answering the handoff's question: SPDX car
 - SemVer bridge still treats an explicit `null` claim as absent while C2PA, SWHID and SPDX reject it.
 - SPDX 3.0 and CycloneDX stay separate bridges; each needs its own claim shape and ADR.
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+
+---
+
+# SESSION — 2026-11-25 (Phase 3: the adoption guide and the README's front door)
+
+## Objective
+
+Close Phase 3's first task. The previous run had written `docs/adoption.md` and `examples/instruisto-release-copilot/` and left them uncommitted, with one open question about the README: its Quick example was reported to teach three shapes the validator rejects.
+
+## Done
+
+- **The guide was re-walked.** Downloaded both assets of `github-copilot-agents/v1.1.0` from `cazucito/instruisto`, confirmed sizes against the release API (73,506 B / 148,743 B) and recomputed both digests: `2605defcf2a7aafb…` and `60d62fe0bbe732bc…`, which are what the two records carry. `stamp` with the guide's exact flags reproduces `60d62fe0bbe7.variorum.json` member for member except `created`. `stamp` without `--scheme` writes `{"name": "none"}` as the guide says; the public asset URL answers `404` with a nine-byte body as pitfall 2 says.
+- **Two imprecisions in `docs/adoption.md` fixed.** The §1 table now distinguishes the required `artifact.digest` (`ID-2`) from the descriptive `size`, `mediaType` and `name`; §3 no longer says `stamp` writes "the five required members and nothing else", because it also fills those three and writes `producer` when given one — what it never writes is a conformance declaration or an invented section.
+- **The README Quick example replaced with a real record.** It had `lineage.parents` as an array of strings, `state.transitions[].actor` as a string and elided digests: a validator-rejected shape in the most copied block in the repository. It is now `examples/la-enpenso-shot-01/b0d1bfac8fc9.variorum.json` verbatim. The third reported defect (`recipe.tool` as an object) was not one: `$defs/tool` allows `{name, model, snapshot}`.
+- **`ReadmeExampleTests`** in `tests/test_docs.py`: exactly one ```json block in the README, and it must equal a shipped record; validity is covered by `ExamplesTests` on the same bytes, so the test guards the copy.
+- README's field table first row: `identity` → `artifact` and the derived `id`. These are the members; `identity` is a section title.
+- `examples/README.md` gained the missing `instruisto-release-copilot` row. CHANGELOG: three `Added` entries and one `Changed`. PLAN: Phase 3 first box checked. STATE rewritten, HANDOFF prepended.
+
+## Numbers
+
+- 114 unit tests OK.
+- `conform --coverage`: 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
+- Seven example records validate (one pre-existing `REC-5` warning, a SHOULD).
+
+## Decisions
+
+- The README's example is a shipped record rather than an invented skeleton. A storefront that teaches a shape the validator rejects makes every reader's first record invalid, and no other check in the repository reads prose.
+- The test asserts equality with a shipped record instead of re-validating: the validator already runs on those bytes through `ExamplesTests`, and the failure mode being guarded is drift, not invalidity.
+
+## Open
+
+- Phase 3 continues with three case studies — adoption in a project's own repository, not another record under `examples/`.
+- Owner review of the draft, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- SemVer bridge still treats an explicit `null` claim as absent while C2PA, SWHID and SPDX reject it.
+- PROV bridge planned; `conform --verbose` still has no skipped-bridge report; one `semver.tag` per record.

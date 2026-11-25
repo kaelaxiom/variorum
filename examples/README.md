@@ -6,6 +6,7 @@ Real records from real artifacts. Every digest here was computed from the actual
 |---|---|---|
 | [la-enpenso-shot-01](la-enpenso-shot-01/) | Two generative video takes, one rejected and one approved | Lineage, sibling semantics, generative recipe, terminal rejection |
 | [instruisto-guide-owasp](instruisto-guide-owasp/) | A released course guide PDF | Wrapping an existing SemVer label unchanged, the `v` and monorepo tag problem, a build recipe read from the artifact |
+| [instruisto-release-copilot](instruisto-release-copilot/) | Two PDFs shipped under one tag | The core-only adoption path end to end: one artifact, one record, and a tag that is not a version |
 | [software-tools-inventory](software-tools-inventory/) | A generated JSON report | Build recipe, a custom scheme wrapped unchanged, full lifecycle |
 | [du-vortoj-mark](du-vortoj-mark/) | A brand PNG | Core conformance only, `scheme: none`, declared limitations |
 

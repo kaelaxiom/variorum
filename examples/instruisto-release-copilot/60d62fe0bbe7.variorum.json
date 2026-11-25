@@ -1,0 +1,22 @@
+{
+  "variorum": "0.1",
+  "id": "urn:variorum:sha256:60d62fe0bbe732bcd1712902d3dcaba5bfa046d622c04d2dda9682ee96517a0f",
+  "artifact": {
+    "digest": "sha256:60d62fe0bbe732bcd1712902d3dcaba5bfa046d622c04d2dda9682ee96517a0f",
+    "size": 148743,
+    "mediaType": "application/pdf",
+    "name": "syllabus.pdf"
+  },
+  "scheme": {
+    "name": "semver",
+    "version": "1.1.0"
+  },
+  "created": "2026-11-25T05:21:26-06:00",
+  "producer": {
+    "name": "cazucito",
+    "kind": "human"
+  },
+  "extensions": {
+    "variorum:conformance": ["core"]
+  }
+}
