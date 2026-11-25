@@ -252,6 +252,29 @@
               "description": "SWH-2: one SWHID of scheme version 1 (SWHID 1.2 §4, §5.1), stored as the archive emitted it. SWH-5: no fragment qualifier, because a record identifies a whole artifact. The qualifier combinations of SWH-4 depend on the object type and on the other qualifiers; JSON Schema cannot express those, so the reference tool enforces them."
             }
           }
+        },
+        "variorum:spdx": {
+          "type": "object",
+          "description": "SPDX-1: the claim that this record cites the SPDX document describing the artifact's contents (spec/90-extensions/spdx.md). The claim is a pointer and carries no checksum: an SPDX SHA256 checksum can equal artifact.digest, and that equality is a reader's comparison, never a copy (SPDX-6, ADR-0013).",
+          "required": ["version", "document"],
+          "additionalProperties": false,
+          "properties": {
+            "version": {
+              "const": "2.3",
+              "description": "SPDX-2: the SPDXVersion the claim is written against (SPDX 2.3.1 §6.1), without the 'SPDX-' prefix. 2.3 and 2.3.1 share the document model; 3.0 does not, so it is refused until a bridge revision defines it."
+            },
+            "document": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:[^\\s#]+$",
+              "description": "SPDX-3: the document namespace (§6.5) — a unique absolute URI with a scheme and no fragment, because '#' is reserved for element URIs (§7.2, §8.2)."
+            },
+            "element": {
+              "type": "string",
+              "pattern": "^SPDXRef-[A-Za-z0-9.-]+$",
+              "not": { "const": "SPDXRef-DOCUMENT" },
+              "description": "SPDX-4: the SPDX identifier of the package or file element that describes this artifact (§7.2, §8.2). Absent means the claim points at the document without naming an element; SPDXRef-DOCUMENT is refused because a document is not one of the things it describes."
+            }
+          }
         }
       }
     }

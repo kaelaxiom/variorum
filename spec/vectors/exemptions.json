@@ -36,6 +36,8 @@
     "C2P-7": "A consumer obligation: reporting a contradiction between a manifest's ingredients and a record's lineage requires both documents and a judgement about which pair of artifacts they describe.",
     "C2P-8": "A consumer obligation about signature scope: no record decides what a reader infers from a valid C2PA signature, and neither signature covers the other document.",
     "SWH-7": "A consumer obligation that needs the artifact's bytes: the record validator never sees them, so it cannot recompute a content's SWHID or detect a claim that disagrees with the file.",
-    "SWH-8": "A consumer obligation about what an identifier covers: no record can demonstrate that a reader refrained from treating a tree, commit, tag or snapshot identifier as the artifact's bytes."
+    "SWH-8": "A consumer obligation about what an identifier covers: no record can demonstrate that a reader refrained from treating a tree, commit, tag or snapshot identifier as the artifact's bytes.",
+    "SPDX-7": "A consumer obligation that needs three things the record does not carry: the artifact's bytes, the SPDX document the claim names, and a resolver for both. The comparison of a file element's SHA256 checksum with the digest happens outside any record.",
+    "SPDX-8": "A consumer obligation about the conclusions a bill of materials licenses: that a verification code covers a set rather than a file, and that a claim without 'element' names nothing, are both facts about what a reader may infer, not properties of a record."
   }
 }

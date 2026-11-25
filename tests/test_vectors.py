@@ -42,7 +42,7 @@ class SuiteIntegrityTests(unittest.TestCase):
 
     def test_every_group_is_present(self) -> None:
         groups = {vector.group for vector in self.vectors}
-        expected = {"core", "identity", "scheme", "lineage", "recipe", "state", "attestation", "conformance", "semver", "c2pa", "swhid"}
+        expected = {"core", "identity", "scheme", "lineage", "recipe", "state", "attestation", "conformance", "semver", "c2pa", "swhid", "spdx"}
         self.assertEqual(groups, expected)
 
     def test_bridge_vectors_name_a_written_bridge(self) -> None:

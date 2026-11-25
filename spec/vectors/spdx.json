@@ -1,0 +1,366 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "spdx",
+  "description": "Rules from spec/90-extensions/spdx.md: the opt-in bridge that cites the bill of materials describing an artifact's contents (SPDX-1..SPDX-6). Every vector names the bridge it exercises (CON-28), so an implementation that does not claim it skips them. SPDX-7 and SPDX-8 are consumer obligations and are exempted in exemptions.json. The base claim points at fixtures/hello.spdx.json, a real SPDX 2.3.1 document whose checksums tests/test_validate.py recomputes from fixtures/hello.txt.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": {
+      "name": "none"
+    },
+    "created": "2026-11-22T12:00:00-06:00",
+    "extensions": {
+      "variorum:spdx": {
+        "version": "2.3",
+        "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+        "element": "SPDXRef-File-hello"
+      }
+    }
+  },
+  "vectors": [
+    {
+      "name": "spdx/claim-must-be-an-object",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "A bare namespace leaves no room for the edition or the element, and cannot be distinguished from a string another extension might define.",
+      "rules": ["SPDX-1"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-1"]
+      }
+    },
+    {
+      "name": "spdx/claim-must-not-be-null",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "JSON null is not an object and not an absent member: a record that writes the key with no claim is rejected, exactly as the schema types it.",
+      "rules": ["SPDX-1"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": null
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-1"]
+      }
+    },
+    {
+      "name": "spdx/version-is-required",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "SPDX 3.0 replaced the document model, so a claim that names no edition cannot say which one its fields mean.",
+      "rules": ["SPDX-2"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-File-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-2"]
+      }
+    },
+    {
+      "name": "spdx/version-must-be-a-covered-edition",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "3.0 is a different document model — spdxId as an IRI, namespaceMap, checksums behind verifiedUsing — and citing it under 2.3 rules would be a claim nobody specified.",
+      "rules": ["SPDX-2"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "3.0.1",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-File-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-2"]
+      }
+    },
+    {
+      "name": "spdx/document-is-required",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "A claim that names no document points at nothing; the namespace is the only thing that makes the SBOM findable.",
+      "rules": ["SPDX-3"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "element": "SPDXRef-File-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-3"]
+      }
+    },
+    {
+      "name": "spdx/document-must-carry-a-scheme",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "Section 6.5 requires a scheme: the namespace is an absolute URI, and a bare path is not one.",
+      "rules": ["SPDX-3"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "variorum.spec/spdxdocs/variorum-hello-fixture",
+            "element": "SPDXRef-File-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-3"]
+      }
+    },
+    {
+      "name": "spdx/document-must-not-carry-a-fragment",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "SPDX reserves '#' to build element URIs, so a namespace that already carries one cannot be read unambiguously (sections 6.5, 7.2).",
+      "rules": ["SPDX-3"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture#SPDXRef-File-hello",
+            "element": "SPDXRef-File-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-3"]
+      }
+    },
+    {
+      "name": "spdx/element-must-be-a-local-spdxid",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "An element of another document is written DocumentRef-x:SPDXRef-y (section 6.6), but the claim names one document and has no member for a second one.",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "DocumentRef-upstream:SPDXRef-File-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-4"]
+      }
+    },
+    {
+      "name": "spdx/element-must-not-carry-a-plus",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "DocumentRef idstrings allow '+', element SPDXIDs do not (sections 6.6, 7.2); the bridge follows the element rule.",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-File+hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-4"]
+      }
+    },
+    {
+      "name": "spdx/element-must-not-carry-an-underscore",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "The prose (sections 7.2, 8.2) and the published SPDX 2.3.1 JSON schema agree on letters, digits, '.' and '-', so an underscore is not an SPDX element identifier in either rendering.",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-File_hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-4"]
+      }
+    },
+    {
+      "name": "spdx/element-must-not-be-the-document-identifier",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "SPDXRef-DOCUMENT is well formed and a category error as a subject: a document is not one of the things it describes, and the claim without 'element' already says 'the document, no particular element'.",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-DOCUMENT"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-4"]
+      }
+    },
+    {
+      "name": "spdx/claim-defines-three-members",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "The tempting fourth member is a copy of an SPDX checksum, which can be numerically right while the record goes stale; a checksum belongs to the document that owns it.",
+      "rules": ["SPDX-5"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-File-hello",
+            "checksum": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-5"]
+      }
+    },
+    {
+      "name": "spdx/id-must-not-be-the-document-namespace",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "A namespace is a name that changes when the document is reissued and that no reader can derive from the artifact's bytes (SPDX-6); 'id' stays urn:variorum:sha256:... (ID-7).",
+      "rules": ["SPDX-6"],
+      "patch": {
+        "id": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-6"]
+      }
+    },
+    {
+      "name": "spdx/id-must-not-be-an-element-uri",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "SPDX builds an element URI from the namespace, '#', and the SPDXID (section 7.2). It identifies an element inside one document version, not the bytes in hand.",
+      "rules": ["SPDX-6"],
+      "patch": {
+        "id": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301#SPDXRef-File-hello"
+      },
+      "expect": {
+        "valid": false,
+        "rules": ["SPDX-6"]
+      }
+    },
+    {
+      "name": "spdx/document-only-claim-is-accepted",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "Without 'element' the claim says the artifact is in the document's scope and names no element; that is the weaker claim, and it is legitimate.",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "spdx/element-naming-a-package-is-accepted",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "The bridge does not assume the element is a file: a package element is a legitimate subject, and what a reader may compare then differs (SPDX-7).",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-Package-hello"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "spdx/element-idstring-accepts-dots-and-uppercase",
+      "class": "core",
+      "bridge": "variorum:spdx",
+      "description": "The idstring is letters, digits, '.' and '-' with no case constraint (section 7.2); a validator that insisted on lowercase would reject identifiers SPDX allows.",
+      "rules": ["SPDX-4"],
+      "patch": {
+        "extensions": {
+          "variorum:spdx": {
+            "version": "2.3",
+            "document": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "element": "SPDXRef-3D.Printerator.v2"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "spdx/a-record-without-the-claim-says-nothing",
+      "class": "core",
+      "description": "An unclaimed record for an artifact that happens to be listed in an SBOM is still a core record; the bridge is opt-in, and silence is not a denial.",
+      "rules": [],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        },
+        "scheme": {
+          "name": "none"
+        },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": {
+        "valid": true
+      }
+    }
+  ]
+}

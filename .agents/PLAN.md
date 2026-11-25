@@ -22,7 +22,7 @@
 - [x] `spec/90-extensions/semver.md` — a worked wrapping example with precedence preserved
 - [x] `spec/90-extensions/c2pa.md` — how a Variorum record and a C2PA manifest coexist
 - [x] `spec/90-extensions/swhid.md` — mapping to SWHID for source code
-- [ ] `spec/90-extensions/spdx.md` — SBOM/ML-BOM cross-reference
+- [x] `spec/90-extensions/spdx.md` — SBOM/ML-BOM cross-reference
 
 ## Phase 3 — Adoption
 

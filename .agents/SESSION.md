@@ -192,3 +192,40 @@ Close the SWHID bridge the previous run had left in the tree, uncommitted and wi
 - SPDX next; its checksums can coincide with the digest, which is the interesting difference from SWHID.
 - SemVer bridge still treats an explicit `null` claim as absent while C2PA and SWHID reject it.
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+
+---
+
+# SESSION — 2026-11-24 (Phase 2: SPDX bridge, and Phase 2 closed)
+
+## Objective
+
+Close Phase 2 with its fourth bridge, answering the handoff's question: SPDX carries checksums in the same algorithms Variorum uses, so can one of them be the digest, and what should the bridge point at?
+
+## Done
+
+- `spec/90-extensions/spdx.md` (`SPDX-1`…`SPDX-8`). The claim is `extensions["variorum:spdx"]` with exactly `version`, `document` and an optional `element`. `version` is a closed list holding `"2.3"` — the `SPDXVersion` without its prefix — because SPDX 3.0 replaced the document model (`spdxId` as an IRI, `namespaceMap`, checksums behind `verifiedUsing`). `document` is the `documentNamespace` (§6.5: absolute URI, scheme required, no `#`, because SPDX reserves the fragment for element URIs). `element` is an `SPDXRef-[A-Za-z0-9.-]+` identifier (§7.2, §8.2), and `SPDXRef-DOCUMENT` is refused: a well-formed identifier and a category error as a subject.
+- 90.3 is the load-bearing section: five checksums, three subjects. A file element's `SHA256` **can** equal the digest; its `SHA1` cannot; a package checksum can when the package is one blob and the artifact is that blob (Annex K.2.2.3); the package verification code **never** can, because §7.9 hashes the sorted concatenation of the files' SHA-1 *hex strings* — for the fixture, `SHA1("affa1e6d…5215286c") = 41b0f52089ef07…f7d5ae78`, a third value over text; an `ExternalDocumentRef` checksum covers the document's bytes. 90.3 pairs SPDX's own self-reference argument (Annex K.2.2.1) with `CORE-15`.
+- `spec/vectors/fixtures/hello.spdx.json` — a real SPDX 2.3.1 document for the existing 111-byte fixture, with `SPDXRef-Package-hello` (`filesAnalyzed: true`, verification code) containing `SPDXRef-File-hello` (`SHA1` + `SHA256`). Its namespace is the claim's `document` in the vector base record.
+- `spec/vectors/spdx.json` — 18 vectors marked `"bridge": "variorum:spdx"`: claim shape, `null`, version missing and `"3.0.1"`, document missing / schemeless / fragment-bearing, `DocumentRef-…`, `SPDXRef-`, underscore, `+`, `SPDXRef-DOCUMENT`, a copied `checksum` member, `id` as namespace and as element URI, plus four accepts (document-only claim, package element, dots-and-uppercase idstring, unclaimed record). `SPDX-7`/`SPDX-8` exempted with consumer-obligation reasons.
+- `docs/adr/ADR-0013-spdx-bridge-points-at-the-sbom.md` — why a copy that would often be numerically right is the most dangerous kind.
+- Schema typed (`const` version, namespace pattern, element pattern with a `not` guard); tool 0.6.0 (`validate_spdx_bridge`, `SPDX` family); `SpdxBridgeTests` (10 tests), one of which parses the fixture, recomputes both checksums and rebuilds the §7.9 code; `spdx` added to the expected groups. README, CHANGELOG, PLAN, extensions README and vectors README updated; STATE and HANDOFF rewritten.
+
+## Numbers
+
+- 113 unit tests OK.
+- `conform --coverage`: 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
+- Five example records validate.
+
+## Decisions
+
+- Reference, never copy (ADR-0013): the equality between a file element's `SHA256` and the digest is a reader's check, not a licence to write the digest from the document.
+- `version` is a closed list, because a 3.0 document under 2.3 rules would be a claim nobody specified.
+- `element` is optional; absent means "in this document's scope", and `SPDXRef-DOCUMENT` is refused rather than silently ignored.
+- Identity stays the digest; a namespace or an element URI is a name that changes when the document is reissued and cannot be recomputed from the bytes.
+
+## Open
+
+- Phase 2 is closed. Phase 3 starts with `docs/adoption.md`: the core-only path, written by actually recording one real release from a project already in `examples/`.
+- SemVer bridge still treats an explicit `null` claim as absent while C2PA, SWHID and SPDX reject it.
+- SPDX 3.0 and CycloneDX stay separate bridges; each needs its own claim shape and ADR.
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.

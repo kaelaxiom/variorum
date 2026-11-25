@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.5.0"
+TOOL_VERSION = "0.6.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -116,6 +116,24 @@ SWHID_PATTERN = re.compile(
 )
 SWHID_SNAPSHOT_PATTERN = re.compile(rf"^swh:1:snp:{SWHID_HEX}$")
 SWHID_ANCHOR_PATTERN = re.compile(rf"^swh:1:(?:{'|'.join(SWHID_ROOT_TYPES)}):{SWHID_HEX}$")
+
+SPDX_BRIDGE = "variorum:spdx"
+SPDX_MEMBERS = {"version", "document", "element"}
+# SPDX 2.3.1 §6.1: SPDXVersion is 'SPDX-M.N'. The bridge covers the 2.3 line,
+# which 2.3 and 2.3.1 share. SPDX 3.0 replaced the document model (spdxId as an
+# IRI, namespaceMap, checksums behind verifiedUsing), so it is a bridge
+# revision, not a lenient reading of this claim.
+SPDX_VERSIONS = ("2.3",)
+# §6.5: a unique absolute URI, a scheme required, and no '#' — SPDX reserves the
+# fragment to build element URIs, so a namespace that carries one cannot be read
+# unambiguously (§7.2, §8.2).
+SPDX_DOCUMENT_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:[^\s#]+$")
+# §7.2 and §8.2: 'SPDXRef-' plus an idstring of letters, digits, '.' and '-'.
+# The published SPDX 2.3.1 JSON schema pins the same pattern, so prose and
+# schema agree here; a '+' (allowed in DocumentRef idstrings, §6.6) is not an
+# element identifier.
+SPDX_ELEMENT_PATTERN = re.compile(r"^SPDXRef-[A-Za-z0-9.-]+$")
+SPDX_RESERVED_ELEMENT = "SPDXRef-DOCUMENT"
 
 
 # STA-10: legal lifecycle transitions.
@@ -748,6 +766,79 @@ def validate_swhid_bridge(record: dict[str, Any], report: Report) -> None:
         report.add("SWH-4", f"origin {origin!r} is not a URI: it must begin with a scheme such as 'https:'")
 
 
+def validate_spdx_bridge(record: dict[str, Any], report: Report) -> None:
+    """SPDX-1..SPDX-6 (spec/90-extensions/spdx.md).
+
+    The claim is a pointer at a bill of materials, never a copy of one of its
+    checksums: SPDX carries checksums in the same algorithms Variorum uses, so a
+    copy would often be numerically right while being a statement the record is
+    not entitled to make. Only records carrying
+    ``extensions["variorum:spdx"]`` are held to these rules; a record for an
+    artifact that happens to be listed in an SBOM, without the claim, says
+    nothing about the SBOM (ADR-0013).
+    """
+    extensions = record.get("extensions")
+    if not isinstance(extensions, dict):
+        return
+    if SPDX_BRIDGE not in extensions:
+        return
+    claim = extensions[SPDX_BRIDGE]
+    if not isinstance(claim, dict):
+        report.add("SPDX-1", "'variorum:spdx' must be an object")
+        return
+
+    unknown = sorted(set(claim) - SPDX_MEMBERS)
+    if unknown:
+        report.add(
+            "SPDX-5",
+            f"the SPDX claim defines 'version', 'document' and 'element' only; found {unknown}",
+        )
+
+    version = claim.get("version")
+    if version not in SPDX_VERSIONS:
+        report.add(
+            "SPDX-2",
+            "'version' must be '2.3', the SPDXVersion this bridge is written against: "
+            "SPDX 3.0 replaced the document model and needs its own bridge",
+        )
+
+    document = claim.get("document")
+    if not isinstance(document, str) or not document:
+        report.add("SPDX-3", "'document' must carry the SPDX document namespace")
+        document = None
+    elif not SPDX_DOCUMENT_PATTERN.fullmatch(document):
+        report.add(
+            "SPDX-3",
+            f"{document!r} is not a document namespace: expected an absolute URI with a scheme "
+            "and no '#', which SPDX reserves for element URIs",
+        )
+
+    element = claim.get("element")
+    if element is not None:
+        if not isinstance(element, str) or not SPDX_ELEMENT_PATTERN.fullmatch(element):
+            report.add(
+                "SPDX-4",
+                f"{element!r} is not an SPDX element identifier: expected 'SPDXRef-' followed by "
+                "letters, digits, '.' or '-'",
+            )
+        elif element == SPDX_RESERVED_ELEMENT:
+            report.add(
+                "SPDX-4",
+                "'SPDXRef-DOCUMENT' names the document itself, which is not one of the things it "
+                "describes; omit 'element' to point at the document without naming an element",
+            )
+
+    record_id = record.get("id")
+    if isinstance(record_id, str) and isinstance(document, str):
+        if record_id == document or record_id.startswith(document + "#"):
+            report.add(
+                "SPDX-6",
+                "'id' must stay the urn:variorum: identifier derived from artifact.digest; "
+                "a namespace or an element URI changes when the document is reissued and no "
+                "reader can recompute it from the artifact's bytes",
+            )
+
+
 def validate_record(record: Any, artifact: Path | None = None) -> Report:
     """Run every applicable rule and collect the findings."""
     report = Report()
@@ -767,6 +858,7 @@ def validate_record(record: Any, artifact: Path | None = None) -> Report:
     validate_semver_bridge(record, report)
     validate_c2pa_bridge(record, report)
     validate_swhid_bridge(record, report)
+    validate_spdx_bridge(record, report)
     return report
 
 
@@ -850,7 +942,7 @@ def build_graph(records: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, str,
 # Conformance suite (spec/07-conformance.md)
 # --------------------------------------------------------------------------- #
 
-RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P", "SWH")
+RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P", "SWH", "SPDX")
 RULE_PATTERN = re.compile(r"\b(" + "|".join(RULE_FAMILIES) + r")-[0-9]+\b")
 
 

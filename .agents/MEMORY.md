@@ -79,3 +79,16 @@ The 111-byte `hello.txt` fixture hashes to `a370e4f1…` under SHA-256 (the dige
 A vector's `fixture: true` check guards `artifact.digest`; it cannot recompute a SWHID, because that needs a different pre-image that the suite does not model. The base claim in `spec/vectors/swhid.json` is therefore a stored string, and only a unit test can keep it honest.
 
 **Lesson:** when a bridge vector carries a foreign hash, add a test that rebuilds that hash from the fixture in the foreign standard's own way and asserts the vector's value. Otherwise the same staleness CON-19 exists to prevent simply moves one file over.
+
+## 2026-11-24 — The right value for the wrong reason
+
+The SPDX bridge is the first place where copying a foreign checksum into `artifact.digest` would produce the *correct* value in the ordinary case: a file element's `SHA256` is the same bytes under the same algorithm. Every other bridge refused the copy because it was obviously wrong (a SWHID hashes a different pre-image, a C2PA manifest is a different subject). Refusing a copy that would be numerically right is the harder discipline, because no test of the resulting record can tell it apart from a computed digest.
+
+**Lesson:** the question is never "does this value match?" but "is this document entitled to state it?". When a foreign field happens to coincide with a local one, keep the local one computed from the bytes and make the coincidence a consumer's comparison — otherwise the record inherits a staleness it cannot detect.
+
+## 2026-11-24 — A hash over hex text is not a hash over bytes
+
+SPDX's package verification code (§7.9) is SHA-1 over the sorted concatenation of the files' SHA-1 *hex strings*. For the 111-byte fixture that is `SHA1("affa1e6d…5215286c") = 41b0f520…`, a value no algorithm applied to the bytes can produce. It looks like a content hash and is a hash of a set rendered as text.
+
+**Lesson:** before treating any "checksum" as comparable to a digest, read what its pre-image is built from. Equal-length hex is not equal subject, and a set hashed as text is the case where the two diverge most quietly.
+

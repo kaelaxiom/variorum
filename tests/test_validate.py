@@ -551,6 +551,125 @@ class SwhidBridgeTests(unittest.TestCase):
         self.assert_accepted(record_with(extensions={"org.example:note": "x"}))
 
 
+class SpdxBridgeTests(unittest.TestCase):
+    """SPDX-1..SPDX-6: the bridge points at a bill of materials and binds only the records that claim it (ADR-0013)."""
+
+    FIXTURE = ROOT / "spec" / "vectors" / "fixtures" / "hello.txt"
+    DOCUMENT = ROOT / "spec" / "vectors" / "fixtures" / "hello.spdx.json"
+    NAMESPACE = "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+
+    def claimed(self, **claim) -> dict:
+        base = {"version": "2.3", "document": self.NAMESPACE, "element": "SPDXRef-File-hello"}
+        return record_with(extensions={"variorum:spdx": {**base, **claim}})
+
+    def assert_rejected(self, record: dict, expected_rule: str) -> None:
+        report = variorum.validate_record(record)
+        rules = {issue.rule for issue in report.errors}
+        self.assertFalse(report.ok, "the record should have been rejected")
+        self.assertIn(expected_rule, rules, f"expected {expected_rule}, got {sorted(rules)}: {report.errors}")
+
+    def assert_accepted(self, record: dict) -> None:
+        report = variorum.validate_record(record)
+        self.assertTrue(report.ok, f"the record should have been accepted: {report.errors}")
+
+    def test_the_fixture_document_describes_the_fixture_file(self) -> None:
+        """The equality this bridge is about, recomputed rather than stored.
+
+        SPDX 2.3.1 §8.4: a file checksum hashes the file's bytes, so its SHA256
+        can equal artifact.digest. §7.9: the package verification code is the
+        SHA-1 of the sorted concatenation of the files' SHA-1 *hex strings* — a
+        third value, over text, that no algorithm applied to the bytes can
+        produce. Both are rebuilt here from the fixture, so neither the document
+        nor the spec's table can drift silently.
+        """
+        document = json.loads(self.DOCUMENT.read_text(encoding="utf-8"))
+        data = self.FIXTURE.read_bytes()
+        digest = hashlib.sha256(data).hexdigest()
+        sha1 = hashlib.sha1(data).hexdigest()
+
+        vectors = json.loads((ROOT / "spec" / "vectors" / "spdx.json").read_text(encoding="utf-8"))
+        claim = vectors["base"]["extensions"]["variorum:spdx"]
+        self.assertEqual(claim["document"], document["documentNamespace"])
+        self.assertEqual(claim["version"], document["spdxVersion"].removeprefix("SPDX-"))
+        self.assertEqual(vectors["base"]["artifact"]["digest"], "sha256:" + digest)
+
+        elements = {element["SPDXID"]: element for element in document["files"]}
+        self.assertIn(claim["element"], elements, "the claim must name a file the document defines")
+        checksums = {entry["algorithm"]: entry["checksumValue"] for entry in elements[claim["element"]]["checksums"]}
+        self.assertEqual(checksums["SHA256"], digest, "the element's SHA256 is the digest, not merely like it")
+        self.assertEqual(checksums["SHA1"], sha1)
+
+        package = document["packages"][0]
+        self.assertIs(package["filesAnalyzed"], True, "a verification code requires filesAnalyzed true (§7.9)")
+        code = package["packageVerificationCode"]["packageVerificationCodeValue"]
+        self.assertEqual(code, hashlib.sha1(sha1.encode("ascii")).hexdigest())
+        self.assertNotEqual(code, digest)
+        self.assertNotEqual(code, sha1)
+
+    def test_claim_must_be_an_object(self) -> None:
+        for claim in (self.NAMESPACE, None, []):
+            with self.subTest(claim=claim):
+                self.assert_rejected(record_with(extensions={"variorum:spdx": claim}), "SPDX-1")
+
+    def test_version_is_required_and_closed(self) -> None:
+        self.assert_rejected(self.claimed(version=None), "SPDX-2")
+        for version in ("3.0.1", "2.2", "2.3.1", 2.3):
+            with self.subTest(version=version):
+                self.assert_rejected(self.claimed(version=version), "SPDX-2")
+        self.assert_accepted(self.claimed(version="2.3"))
+
+    def test_document_must_be_an_absolute_uri_without_a_fragment(self) -> None:
+        for value in (None, "", "spdxdocs/variorum-hello", "https://variorum.spec/x#SPDXRef-File-hello", "https://variorum.spec/x y"):
+            with self.subTest(document=value):
+                self.assert_rejected(self.claimed(document=value), "SPDX-3")
+        self.assert_accepted(self.claimed(document="urn:uuid:3f2504e0-4f89-41d3-9a0c-0305e82c3301"))
+
+    def test_element_must_be_an_spdx_element_identifier(self) -> None:
+        for value in (
+            "DocumentRef-upstream:SPDXRef-File-hello",  # an element of another document (§6.6)
+            "SPDXRef-",                                  # empty idstring
+            "SPDXRef-File_hello",                        # underscore is not in the idstring charset (§7.2)
+            "SPDXRef-File+hello",                        # '+' is allowed in DocumentRef, not here
+            "spdxref-file-hello",                        # the prefix is case-sensitive
+            42,
+        ):
+            with self.subTest(element=value):
+                self.assert_rejected(self.claimed(element=value), "SPDX-4")
+        self.assert_accepted(self.claimed(element="SPDXRef-3D.Printerator.v2"))
+
+    def test_the_element_must_not_be_the_document_itself(self) -> None:
+        self.assert_rejected(self.claimed(element="SPDXRef-DOCUMENT"), "SPDX-4")
+        self.assert_accepted(self.claimed(element="SPDXRef-Package-hello"))
+
+    def test_the_claim_defines_three_members(self) -> None:
+        record = self.claimed(checksum="sha256:" + "a" * 64)
+        self.assert_rejected(record, "SPDX-5")
+
+    def test_identity_never_becomes_a_document_name(self) -> None:
+        record = self.claimed()
+        record["id"] = self.NAMESPACE
+        rules = {issue.rule for issue in variorum.validate_record(record).errors}
+        self.assertIn("SPDX-6", rules, "a namespace must never become the record's identity")
+        self.assertIn("ID-7", rules)
+
+        element_uri = self.claimed()
+        element_uri["id"] = self.NAMESPACE + "#SPDXRef-File-hello"
+        self.assert_rejected(element_uri, "SPDX-6")
+
+        other_element = self.claimed()
+        other_element["id"] = self.NAMESPACE + "#SPDXRef-Something-Else"
+        self.assert_rejected(other_element, "SPDX-6")
+
+    def test_the_claim_need_not_name_an_element(self) -> None:
+        record = self.claimed()
+        del record["extensions"]["variorum:spdx"]["element"]
+        self.assert_accepted(record)
+
+    def test_without_the_claim_nothing_changes(self) -> None:
+        self.assert_accepted(record_with())
+        self.assert_accepted(record_with(extensions={"org.example:sbom": self.NAMESPACE}))
+
+
 class SeverityTests(unittest.TestCase):
     def test_warnings_do_not_make_a_report_fail(self) -> None:
         report = variorum.validate_record(record_with(extensions={"note": "x"}))

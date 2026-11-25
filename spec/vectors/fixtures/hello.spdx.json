@@ -1,0 +1,60 @@
+{
+  "$schema": "https://spdx.org/schema/2.3.1/spdx-schema.json",
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "variorum-hello-fixture",
+  "documentNamespace": "https://variorum.spec/spdxdocs/variorum-hello-fixture-3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "comment": "A minimal SPDX 2.3.1 document for the Variorum conformance fixture spec/vectors/fixtures/hello.txt. The namespace is an identifier, not a location (SPDX 2.3.1 section 6.5 allows a namespace that does not resolve); the document itself ships beside the file it describes. The package verification code is the SHA-1 of the sorted concatenation of the file's SHA-1 hex strings (section 7.9), recomputed by tests/test_validate.py so that no checksum here can go stale.",
+  "creationInfo": {
+    "created": "2026-11-25T05:10:32Z",
+    "creators": ["Organization: Variorum project"],
+    "comment": "Created by hand for the conformance suite; the values are the output of tools/variorum.py digest and of the section 7.9 algorithm applied to the fixture's bytes."
+  },
+  "packages": [
+    {
+      "name": "hello",
+      "SPDXID": "SPDXRef-Package-hello",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "packageVerificationCode": {
+        "packageVerificationCodeValue": "41b0f52089ef073c9d45cdc5abcecf3bf7d5ae78"
+      },
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "The package holds exactly one file, so its verification code is the SHA-1 of that file's forty-character SHA-1 text and not the SHA-1 of any bytes."
+    }
+  ],
+  "files": [
+    {
+      "fileName": "./hello.txt",
+      "SPDXID": "SPDXRef-File-hello",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "affa1e6dfd52ba11386347e23c7d31965215286c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": ["NOASSERTION"],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-hello"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hello",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-File-hello"
+    }
+  ]
+}

@@ -1,6 +1,32 @@
 # HANDOFF
 
-## Last session — 2026-11-24 (Phase 2: SWHID bridge)
+## Last session — 2026-11-24 (Phase 2: SPDX bridge, and Phase 2 closed)
+
+**Did:** wrote the fourth bridge and answered its handoff question with arithmetic: **an SPDX checksum can equal the digest, but only one kind of it can, and equality is never a licence to copy.**
+
+- `spec/90-extensions/spdx.md` (`SPDX-1`…`SPDX-8`). The claim is `extensions["variorum:spdx"]` with exactly `version`, `document` and an optional `element`. `version` is a closed list holding `"2.3"` — the `SPDXVersion` without its prefix — because SPDX 3.0 replaced the document model (`spdxId` as an IRI, `namespaceMap`, checksums behind `verifiedUsing`) and a 3.0 document cited under 2.3 rules would be a claim nobody specified. `document` is the `documentNamespace` (§6.5: unique absolute URI, scheme required, no `#`, because SPDX reserves the fragment for element URIs). `element` is an `SPDXRef-[A-Za-z0-9.-]+` identifier (§7.2, §8.2) and is refused when it is `SPDXRef-DOCUMENT`, a well-formed identifier and a category error as a subject. `DocumentRef-x:SPDXRef-y` is refused by shape: the claim names one document and has no member for a second.
+- 90.3 is the load-bearing section: five checksums, three subjects. File `SHA256` (the bytes) **can** equal the digest; file `SHA1` cannot; a package checksum can when the package is one blob and the artifact is that blob (Annex K.2.2.3); the package verification code **never** can, because §7.9 hashes the sorted concatenation of the files' SHA-1 *hex strings* — for `hello.txt`, `SHA1("affa1e6d…5215286c") = 41b0f52089ef07…f7d5ae78`, a third value over text; an `ExternalDocumentRef` checksum covers the *document's* bytes. 90.3 also states the self-reference argument SPDX itself makes in Annex K.2.2.1 and pairs it with `CORE-15`.
+- `spec/vectors/fixtures/hello.spdx.json` — a real SPDX 2.3.1 document for the existing 111-byte fixture, with `SPDXRef-Package-hello` (`filesAnalyzed: true`, verification code) containing `SPDXRef-File-hello` (`SHA1` + `SHA256`), and the two relationships. Its namespace is the claim's `document` in `spec/vectors/spdx.json`'s base record.
+- `spec/vectors/spdx.json` — 18 vectors marked `"bridge": "variorum:spdx"`: claim shape, `null`, version missing and `"3.0.1"`, document missing / schemeless / fragment-bearing, element `DocumentRef-…`, `SPDXRef-`, underscore, `+`, `SPDXRef-DOCUMENT`, a copied `checksum` member, `id` as the namespace and as an element URI, plus four accepts (document-only claim, package element, dots-and-uppercase idstring, unclaimed record). `SPDX-7`/`SPDX-8` exempted with consumer-obligation reasons.
+- `docs/adr/ADR-0013-spdx-bridge-points-at-the-sbom.md` — why a copy that would often be *numerically right* is the most dangerous kind.
+- Schema: `extensions["variorum:spdx"]` typed (`const` version, namespace pattern, element pattern with a `not` guard); tool 0.6.0 (`validate_spdx_bridge`, `SPDX` family); `SpdxBridgeTests` (10 tests), one of which parses the fixture document, recomputes both checksums and rebuilds the §7.9 code; `spdx` added to the expected groups. README, CHANGELOG, PLAN, extensions README and vectors README updated; STATE rewritten.
+
+**Citations verified against SPDX 2.3.1 before merging,** not recalled: §6.1 (`SPDX-M.N`), §6.3 (`SPDXRef-DOCUMENT`), §6.5 (namespace, no `#`, scheme), §6.6 (`DocumentRef-`, `+` allowed there), §7.2/§8.2 (idstring charset), §7.8/§7.9/§7.10 (verification code, package checksum), §8.4 (file checksum, SHA1 obligatory), Annex K.2.1–K.2.2.3. Two corrections to what was assumed: ISO/IEC 5962:2021 standardises SPDX **2.2.1**, not 2.3, and in 2.3.1 the verification code is §7.9 while the package checksum is §7.10. The published schema pins the element pattern `^SPDXRef-[a-zA-Z0-9.-]+$`, so here — unlike C2PA's hex case — prose and schema agree and strictness is faithful.
+
+**Verified:** 113 unit tests OK; `conform --coverage` 188/188 PASS, 96/133 referenced, 37 exempt, 0 uncovered; five examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, and still the only blocker on a public announcement.
+- **Phase 2 is closed.** Phase 3 begins with `docs/adoption.md`: the core-only path, written by actually recording one real release from a project already in `examples/`. Then the three case studies, then the site (owner decision on the domain).
+- SPDX 3.0 is deliberately not covered. A 3.0 bridge is a revision with its own claim shape (`namespaceMap`, `spdxId` as an IRI, `IntegrityMethod`) and its own ADR; `SPDX-2` refuses `"3.0"` until then.
+- CycloneDX stays a separate bridge (`spec/90-extensions/README.md`, Planned): its document identity is `serialNumber` and its hash model differs, so folding it into `spdx.md` would blur which document owns which rule.
+- Consistency item (still open, three bridges now disagree with SemVer): `C2P-1`, `SWH-1` and `SPDX-1` reject an explicit JSON `null` claim; `SEM-1` treats `null` as absent and returns early. The schema types all four claims as objects. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line.
+- `conform --verbose` still has no "skipped bridge vector" report (it never had; the reference runner implements every bridge).
+- `extensions["variorum:semver"].tag` still holds one tag per record.
+- `SPDX-7`'s comparison is stated, not performed: no tool command takes an SPDX document yet. If adoption asks for it, a `variorum check-spdx <record> <document>` would be the honest place, and it must not become a second validator.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-24 (Phase 2: SWHID bridge)
 
 **Did:** closed the SWHID bridge the previous run had left written but uncommitted and red.
 
@@ -85,9 +111,7 @@
 
 ## Next session should
 
-1. Write `spec/90-extensions/spdx.md`: what an SBOM guarantees (elements, relationships, package checksums, `documentNamespace`), what Variorum guarantees, and the one place the two can agree (an SPDX `checksum` using SHA-256 of the artifact itself, which *can* equal `artifact.digest` — say when, and what a package checksum that covers more than one file means instead).
-2. Make it opt-in the same way: extension key `variorum:spdx`, vectors in `spec/vectors/spdx.json` marked `bridge`, `CON-28`.
-3. Add an ADR if the coexistence rule is normative; re-run `python3 -m unittest discover -s tests` and `python3 tools/variorum.py conform --coverage` before every commit.
+*(Fulfilled on 2026-11-24: `spec/90-extensions/spdx.md` was written as `SPDX-1`…`SPDX-8`, with 18 vectors, the fixture document and ADR-0013. Phase 2 is closed; the next task is `docs/adoption.md`, in the section at the top of this file.)*
 
 ## Previous session — 2026-11-23 (Phase 1: testability)
 

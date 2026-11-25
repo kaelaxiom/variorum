@@ -79,10 +79,10 @@ Conformance is not a compliment; it is a testable claim ([`spec/07-conformance.m
 python3 tools/variorum.py conform --coverage
 ```
 
-- [`spec/vectors/`](spec/vectors/) — 170 accept/reject/graph/canonicalisation vectors in eleven groups, each citing the rule it exercises.
+- [`spec/vectors/`](spec/vectors/) — 188 accept/reject/graph/canonicalisation vectors in twelve groups, each citing the rule it exercises.
 - [`spec/vectors/exemptions.json`](spec/vectors/exemptions.json) — the rules no record can decide, each with a stated reason.
 - **Implementation levels:** `core`, `lineage`, `recipe`, `attestation`. Levels are not a ladder — an implementation may claim `recipe` without claiming `lineage`.
-- **Extension bridges:** [`spec/90-extensions/`](spec/90-extensions/) — adjacent standards Variorum coexists with. Written: SemVer ([`semver.md`](spec/90-extensions/semver.md)), C2PA Content Credentials ([`c2pa.md`](spec/90-extensions/c2pa.md)) and SWHID ([`swhid.md`](spec/90-extensions/swhid.md)); SPDX and PROV are planned. A bridge is an opt-in claim and adds no MUST to `core`, so its vectors are required only of implementations that declare the bridge (`CON-28`).
+- **Extension bridges:** [`spec/90-extensions/`](spec/90-extensions/) — adjacent standards Variorum coexists with. Written: SemVer ([`semver.md`](spec/90-extensions/semver.md)), C2PA Content Credentials ([`c2pa.md`](spec/90-extensions/c2pa.md)), SWHID ([`swhid.md`](spec/90-extensions/swhid.md)) and SPDX ([`spdx.md`](spec/90-extensions/spdx.md)); PROV is planned. A bridge is an opt-in claim and adds no MUST to `core`, so its vectors are required only of implementations that declare the bridge (`CON-28`).
 
 A validator that rejects a record for violating a **SHOULD** is wrong: SHOULD violations are warnings, never errors ([ADR-0005](docs/adr/ADR-0005-should-violations-are-warnings.md)).
 
@@ -100,7 +100,7 @@ docs/adr/              Decisions taken while designing the standard
 
 ## Status
 
-**Draft v0.1** — the specification is complete through section 07 and its conformance suite; the SemVer, C2PA and SWHID bridges are written and the others are planned. Nothing here is stable yet. See [CHANGELOG.md](CHANGELOG.md) and [.agents/STATE.md](.agents/STATE.md).
+**Draft v0.1** — the specification is complete through section 07 and its conformance suite; the SemVer, C2PA, SWHID and SPDX bridges are written and PROV is planned. Nothing here is stable yet. See [CHANGELOG.md](CHANGELOG.md) and [.agents/STATE.md](.agents/STATE.md).
 
 ## Licence
 
