@@ -1,6 +1,27 @@
 # HANDOFF
 
-## Last session — 2026-11-25 (Phase 3: the adoption guide, and the README's front door)
+## Last session — 2026-11-25 (Phase 3: the first case study, in `software-tools`)
+
+**Did:** adopted Variorum in a second repository — a real one, not another record under `examples/` — and wrote the case study from that side.
+
+- **`software-tools`** (public repo, PHP 8.1 + SQLite archive of 58 fichas, 91 download rows in its exported inventory) now has `ops/tools/variorum_record.py` (218 lines, stdlib; `stamp` writes a record, `check` recomputes digest and size; there is no option that accepts a digest), `ops/records/fc0cadf23dc1.variorum.json`, `docs/variorum.md`, and index lines in `ops/README.md`, `ops/tools/README.md`, `docs/README.md` and `.agents/`. Commit `e0a739f`, pushed; that tree is clean and its HEAD equals its remote.
+- **The record describes `Gel86a.zip`** (2,520,484 B, the final GEL 8.6a installer, 2002). The digest was computed from the bytes the site serves: the file was downloaded back from production (general downloads password from BWS, session cookie `st_dl_all`), `unzip -t` reported no errors, and SHA-256 `fc0cadf23dc1…` matched — character for character — the value the admin panel had stored for that row. The record therefore confirms a claim the archive had only asserted.
+- **The other ninety artifacts were deliberately left unrecorded.** Their hashes exist only in the panel; copying them would produce records that are numerically right and evidentially empty (ADR-0013's refusal, seen from the producer's side). The adoption plan, written in the adopter's own docs, is to stamp each one when it is re-hashed from the served copy — not before.
+- **Four decisions the format left to the adopter**, documented in both repositories: `scheme.version` is `8.6` and not `8.6a` (the archive's ADR-011 splits version from variant, and `SCH-7` says the label is the project's, opaque); `scheme.authority` points at ADR-011 rather than at the site (`SCH-4` would otherwise have turned a marketing URL into a definition); `producer` is the archive, not GExperts (00-overview §4: the actor that created the record, not the vendor of the binary); and `state`, `recipe` and `lineage` are omitted for reasons stated in the case study — an empty-transition `state` would have forced `"draft"` on a file served for years.
+- **On this side:** `docs/case-studies/README.md` (the bar every case study must meet), `docs/case-studies/software-tools.md`, `docs/adoption.md` §12 ("When the artifact is not yours"), a README pointer and layout row, `CaseStudyIndexTests` in `tests/test_docs.py` (a case study with no row in the index fails), PLAN split into three case-study boxes, CHANGELOG and STATE.
+
+**Verified:** 115 unit tests OK; `conform --coverage` 188/188 PASS, 96/133 referenced, 37 exempt, 0 uncovered; all seven example records validate. The case study's record validates with `--artifact` against the downloaded file (reference CLI) and the adopter's `check` returns `0` on the real file and `1` on a different one.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Case studies two and three.** The archive covered the hard direction — publishing what you did not produce. The next should exercise `recipe` or `state` on artifacts the project *does* produce, in a project that has not adopted the format yet (`la-enpenso` and `du-vortoj` are already in `examples/`, so neither qualifies).
+- **Serving the record beside the download in `software-tools`** (`downloads/<slug>/<file>.variorum.json`) needs the streamer and the admin panel to accept a new extension on a production site — an owner decision, recorded in that repository's HANDOFF.
+- `spec/90-extensions/prov.md` (W3C PROV) is still planned and unwritten — outside Phase 2's four boxes, still worth doing before 1.0.
+- Consistency item (open since the C2PA bridge): `C2P-1`, `SWH-1` and `SPDX-1` reject an explicit JSON `null` claim; `SEM-1` treats `null` as absent and returns early. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line.
+- `conform --verbose` still has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` still holds one tag per record; `SPDX-7`'s comparison is stated, not performed (`check-spdx` is the honest place when adoption asks); CycloneDX stays a separate planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-25 (Phase 3: the adoption guide, and the README's front door)
 
 **Did:** closed Phase 3's first task. `docs/adoption.md` and `examples/instruisto-release-copilot/` had been written the previous run but left uncommitted and unaudited; this session verified them against reality, fixed a real defect in the README, and shipped all three.
 

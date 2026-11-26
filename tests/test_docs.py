@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 INLINE_CODE = re.compile(r"`[^`\n]*`")
 LINK = re.compile(r"\]\(([^)\s]+)")
+CASE_LINK = re.compile(r"\]\(([a-z0-9-]+\.md)\)")
 README_JSON = re.compile(r"^```json\n(.*?)^```", re.MULTILINE | re.DOTALL)
 SKIP_DIRS = {".git", "__pycache__", ".mypy_cache", ".pytest_cache"}
 
@@ -86,6 +87,27 @@ class ReadmeExampleTests(unittest.TestCase):
             record,
             f"README quick example drifted from {matches[0].relative_to(ROOT)}",
         )
+
+
+class CaseStudyIndexTests(unittest.TestCase):
+    """Every case study must be reachable from the index.
+
+    A case study nobody links to is a document nobody reads, and the index is a
+    hand-maintained table — `examples/README.md` already shipped one directory it
+    did not list. Link integrity would catch a table row pointing at nothing; it
+    cannot catch a file with no row.
+    """
+
+    def test_every_case_study_is_listed(self) -> None:
+        index = ROOT / "docs" / "case-studies" / "README.md"
+        listed = set(CASE_LINK.findall(index.read_text(encoding="utf-8")))
+        files = {
+            path.name
+            for path in (ROOT / "docs" / "case-studies").glob("*.md")
+            if path.name != "README.md"
+        }
+        self.assertEqual(set(), files - listed, "case studies missing from the index")
+        self.assertTrue(files, "no case studies found; Phase 3 has at least one")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # STATE
 
-**Phase:** 3 — Adoption (guide and its worked example are done; three case studies next)
+**Phase:** 3 — Adoption (one of three case studies done: `software-tools`)
 **Spec version:** 0.1.0-draft (record format `0.1`, vector suite `variorum-vectors/1`)
 **Updated:** 2026-11-25
 
@@ -22,28 +22,29 @@
 - [x] `spec/vectors/` — 188 vectors in twelve groups, real fixtures, `exemptions.json` with reasons
 - [x] `schema/variorum.schema.json` — JSON Schema 2020-12, including the `variorum:semver`, `variorum:c2pa`, `variorum:swhid` and `variorum:spdx` claim shapes
 - [x] `tools/variorum.py` — reference CLI 0.6.0 (validator, `conform` runner, four bridge checks, stdlib only)
-- [x] `docs/adoption.md` — the core-only adoption path, performed on `instruisto`'s release `github-copilot-agents/v1.1.0` rather than summarised afterwards
-- [x] `examples/` — seven real records in five directories
-- [x] `tests/` — 114 unit tests (validator + four bridges + vector-suite integrity + relative-link integrity + the README record must be a shipped one)
+- [x] `docs/adoption.md` — the core-only adoption path, performed on `instruisto`'s release `github-copilot-agents/v1.1.0` rather than summarised afterwards; §12 covers adopting an artifact you did not produce
+- [x] `docs/case-studies/` — an index with the bar every case study must meet, and `software-tools.md`: the first real adopter, an archive that publishes artifacts it did not make, with one `core` record for a 2002 installer it fetched back from its own live site
+- [x] `examples/` — seven real records in five directories (records *this* repository ships; a case study's record lives in the adopter's)
+- [x] `tests/` — 115 unit tests (validator + four bridges + vector-suite integrity + relative-link integrity + the README record must be a shipped one + every case study must be listed in its index)
 - [x] `.github/workflows/ci.yml` — tests, conformance with coverage, examples on Python 3.11/3.13
 - [x] ADRs 0001–0013
 
 ## Verified on the last session
 
-- `python3 -m unittest discover -s tests` → 114 tests OK.
+- `python3 -m unittest discover -s tests` → 115 tests OK.
 - `python3 tools/variorum.py conform --coverage` → 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
 - All seven records under `examples/*/*.variorum.json` validate.
-- The two records of `examples/instruisto-release-copilot/` were re-derived from the release itself, not trusted: `gh release download github-copilot-agents/v1.1.0 -R cazucito/instruisto -p '*.pdf'` returns `proposal.pdf` (73,506 B) and `syllabus.pdf` (148,743 B), whose SHA-256 values are `2605defcf2a7…` and `60d62fe0bbe7…` — the digests both records carry. `stamp` reproduces each record member for member except `created`.
-- The guide's warnings were re-checked: the public asset URL answers `404` with a nine-byte `Not Found` body (the repository is private), and `stamp` without `--scheme` writes `{"name": "none"}`.
+- The case study's record was checked against the adopter's own bytes, not against its database: `Gel86a.zip` was downloaded back from `software-tools.pcabrera.com` through the general downloads password (2,520,484 B, `Content-Length` agreeing), `unzip -t` reported no errors, and its SHA-256 — `fc0cadf23dc1…` — matched the value the archive's panel stored for that row. The reference CLI reports `OK — record conforms to Variorum 0.1 (core)` with `--artifact`; the adopter's `check` returns `0` on the real file and `1` on a different one.
+- `software-tools` commit `e0a739f` is pushed; that repository's tree is clean and its HEAD equals its remote.
 
 ## What does not exist yet
 
 - [ ] `spec/90-extensions/prov.md` — W3C PROV (planned in the extensions README, outside the four Phase 2 boxes)
-- [ ] Three real repositories adopted as case studies — Phase 3's remaining work before the site
+- [ ] Two more real repositories adopted as case studies — Phase 3's remaining work before the site
 - [ ] Published site (no domain assigned)
 - [ ] Registration in `u-onoma` and `_index`
 - [ ] Owner review of the draft and decision to transfer to `cazucito`
 
 ## Next
 
-See [HANDOFF.md](HANDOFF.md). Phase 3's guide is closed. The next task is the first case study: adopt Variorum in a real repository that is *not* one of the four already cited in `examples/` — the guide says what to do, a case study is someone else's project doing it, with the record living in that project's repository and a conformance declaration to match. `software-tools` is the best candidate: its release pipeline already computes inventory hashes, so the record can be produced by the pipeline instead of by hand.
+See [HANDOFF.md](HANDOFF.md). Phase 3's guide is closed and the first case study is shipped. The next case study should be a project that *builds* what it records — the archive covered the hard direction (publishing artifacts you did not produce), so the second should exercise `recipe` or `state` on artifacts the project produces. `la-enpenso` and `du-vortoj` are already in `examples/`; the case study has to be a project that has not adopted the format yet.

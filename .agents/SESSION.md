@@ -264,3 +264,40 @@ Close Phase 3's first task. The previous run had written `docs/adoption.md` and 
 - Owner review of the draft, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - SemVer bridge still treats an explicit `null` claim as absent while C2PA, SWHID and SPDX reject it.
 - PROV bridge planned; `conform --verbose` still has no skipped-bridge report; one `semver.tag` per record.
+
+# SESSION — 2026-11-25 (Phase 3: the first case study)
+
+## Objective
+
+Turn Phase 3's first case study from a plan into an adoption performed in another repository, then write it up from the adopter's side.
+
+## Done
+
+- **Read the adopter before designing the record.** `software-tools` is an archive, not a release pipeline: 58 fichas, a PHP 8.1 + SQLite site, 91 download rows in its exported inventory, and an admin panel that already stores a `sha256` per hosted file. Its ADR-011 splits downloads into four axes (work, version, variant, era) plus a year — which decides what `scheme.version` means for every artifact the archive will ever record.
+- **Fetched the artifact back from production instead of trusting the catalogue.** Unlocked the private collection with the general password from BWS, downloaded `Gel86a.zip` (2,520,484 B, `Content-Length` agreeing), ran `unzip -t` (no errors) and hashed it: `fc0cadf23dc1…`, identical to the value the panel stored for the `gel` row. The digest came from the bytes; the panel's value was confirmed by it, not copied into it.
+- **Wrote `ops/tools/variorum_record.py` in the adopter's repository** (218 lines, stdlib only): `stamp` computes digest and size and writes `<digest-prefix>.variorum.json` (`CORE-13`); `check` recomputes both and exits 1 when they diverge. There is deliberately no option that accepts a digest, and `--conformance` refuses to declare a class whose member the record does not carry.
+- **Emitted one record and explained the ninety that were not emitted.** `ops/records/fc0cadf23dc1.variorum.json` (core) plus `ops/records/README.md` and `docs/variorum.md` (Spanish, the adopter's language for docs). The reason the rest stay unrecorded is written where the next agent of that repository will read it.
+- **Decisions taken in the adopter's terms:** `version: "8.6"` (ADR-011 calls 8.6a the *variant*; `SCH-7` makes the label the project's and opaque), `authority` = the ADR that defines the scheme (`SCH-4`; a site URL would have been decoration), `producer` = `software-tools` with the script named (00-overview §4: the record's creator), and no `state`/`recipe`/`lineage` — `STA-7` would have forced `"draft"` on a file served since 2002.
+- **On this side:** `docs/case-studies/README.md` (the bar: real adopter, computed digest, declaration, friction), `docs/case-studies/software-tools.md`, `docs/adoption.md` §12, README pointer and layout row, `CaseStudyIndexTests`, PLAN split into three boxes, CHANGELOG, STATE.
+- `software-tools` commit `e0a739f` pushed.
+
+## Numbers
+
+- 115 unit tests OK (was 114; `CaseStudyIndexTests` added).
+- `conform --coverage`: 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
+- Seven example records validate.
+- Adopter's record: reference `validate --artifact` → `OK — record conforms to Variorum 0.1 (core)`; adopter's `check` → `0` on the real file, `1` on a different one.
+
+## Decisions
+
+- **A case study's record lives in the adopter's repository, not in `examples/`.** The example set holds records this repository ships; the case study is evidence that someone else can ship one, and its commit is the proof.
+- **One record, not ninety-one, is the honest adoption.** A record copied from a catalogue is a claim wearing evidence's clothes; the case study says so in the adopter's own words instead of quietly producing ninety plausible files.
+- **The version axis belongs to the adopter's taxonomy.** The record says `8.6` while the artifact is called `Gel86a.zip`; refining it would have been the adoption overruling the project it was adopted by.
+- **The index is tested.** A case study with no row in `docs/case-studies/README.md` now fails the suite — the `examples/README.md` table had already drifted once.
+
+## Open
+
+- Two more case studies: a project that produces what it records, exercising `recipe` or `state`.
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- `software-tools` cannot serve the record beside the download without a streamer change: owner decision.
+- SemVer bridge still treats an explicit `null` claim as absent while C2PA, SWHID and SPDX reject it; PROV bridge planned; `conform --verbose` still has no skipped-bridge report; one `semver.tag` per record.

@@ -28,6 +28,9 @@
 
 - [x] `docs/adoption.md` — one-page guide, core-only path first
 - [ ] Adopt in three real repositories as case studies
+  - [x] [`software-tools`](../docs/case-studies/software-tools.md) — an archive that publishes artifacts it did not produce; one artifact, `core`, emitted by the project's own tool
+  - [ ] Second case study
+  - [ ] Third case study
 - [ ] Public site (domain not yet decided)
 - [ ] Announce
 

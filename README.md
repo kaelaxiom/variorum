@@ -124,7 +124,7 @@ One record, complete: [`examples/la-enpenso-shot-01/b0d1bfac8fc9.variorum.json`]
 
 `core` is the five members `variorum`, `id`, `artifact`, `scheme` and `created`; everything below `created` is a conformance class adopted because the project needed it. The scheme is one the project invented and Variorum does not interpret — and `determinism: "none"` is an honest answer, not a missing one.
 
-To adopt it for one artifact: [`docs/adoption.md`](docs/adoption.md).
+To adopt it for one artifact: [`docs/adoption.md`](docs/adoption.md). What adoption looks like in a project that did it, with its commit and its own tooling: [`docs/case-studies/`](docs/case-studies/).
 
 ## Conformance
 
@@ -150,6 +150,7 @@ schema/                JSON Schema (2020-12) — normative for implementers
 tools/                 Reference CLI and conformance runner (Python, stdlib only)
 examples/              Real records from real projects
 docs/adoption.md       How to adopt it, on one real release
+docs/case-studies/     Adoption in real projects, told from their repository
 docs/adr/              Decisions taken while designing the standard
 .agents/               Continuity protocol for agent sessions
 ```

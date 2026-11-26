@@ -158,6 +158,15 @@ A consumer does not take `["core"]` on faith: it runs the same vectors against t
 
 If a step in this guide ever demands one of those, the guide is wrong, not your project.
 
+## 12. When the artifact is not yours
+
+An archive, a mirror or a museum publishes bytes it did not produce and cannot rebuild. The path is the same — `core`, one record per artifact, the digest computed from the file — with two differences worth knowing before you start:
+
+- **A hash stored in your catalogue is a claim, not a source.** Copying it into a record produces a record that repeats your database and inherits its staleness, with no way to notice when the bytes and the value drift apart. Fetch the artifact back and hash it; if you cannot, leave the record unwritten.
+- **`producer` is you, not the vendor.** It names the actor that created the record, never the author of the binary. Provenance belongs in whatever instrument your project already uses for it.
+
+[`case-studies/software-tools.md`](case-studies/software-tools.md) walks the whole path on a real archive — 91 stored hashes, one record, and the reason the other ninety stayed unrecorded.
+
 ## Verify the example
 
 ```bash
