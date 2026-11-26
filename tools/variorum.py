@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.6.0"
+TOOL_VERSION = "0.6.1"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -1336,6 +1336,28 @@ def command_validate(arguments: argparse.Namespace) -> int:
     return 1
 
 
+def render_tool_chain(tool: object) -> str:
+    """One tool or an array of them, as `show` prints it.
+
+    REC-5 lets `recipe.tool` be a single object or a chain; printing "?" for a
+    legal shape is a defect in the reader, not in the record.
+    """
+    if isinstance(tool, dict):
+        name = tool.get("name")
+        if not isinstance(name, str) or not name:
+            return "?"
+        model = tool.get("model")
+        version = tool.get("version")
+        label = f"{name}/{model}" if isinstance(model, str) and model else name
+        if isinstance(version, str) and version:
+            label += f" {version}"
+        return label
+    if isinstance(tool, list):
+        rendered = [render_tool_chain(entry) for entry in tool]
+        return ", ".join(label for label in rendered if label) or "?"
+    return "?"
+
+
 def command_show(arguments: argparse.Namespace) -> int:
     record = load_record(Path(arguments.record))
     artifact = record.get("artifact", {})
@@ -1354,10 +1376,7 @@ def command_show(arguments: argparse.Namespace) -> int:
             print(f"from      {parent.get('relation')} of {parent.get('id')}")
     recipe = record.get("recipe")
     if recipe:
-        tool = recipe.get("tool")
-        tool_name = tool.get("name") if isinstance(tool, dict) else "?"
-        model = tool.get("model") if isinstance(tool, dict) else None
-        print(f"recipe    {recipe.get('kind')} via {tool_name}{('/' + model) if model else ''}")
+        print(f"recipe    {recipe.get('kind')} via {render_tool_chain(recipe.get('tool'))}")
     return 0
 
 

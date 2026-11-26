@@ -1,6 +1,6 @@
 # STATE
 
-**Phase:** 3 — Adoption (one of three case studies done: `software-tools`)
+**Phase:** 3 — Adoption (two of three case studies done: `software-tools`, `3d-printerator`)
 **Spec version:** 0.1.0-draft (record format `0.1`, vector suite `variorum-vectors/1`)
 **Updated:** 2026-11-25
 
@@ -21,30 +21,32 @@
 - [x] `spec/90-extensions/spdx.md` — the SPDX 2.3 bridge (`SPDX-1`…`SPDX-8`), a pointer to the bill of materials, opt-in per record
 - [x] `spec/vectors/` — 188 vectors in twelve groups, real fixtures, `exemptions.json` with reasons
 - [x] `schema/variorum.schema.json` — JSON Schema 2020-12, including the `variorum:semver`, `variorum:c2pa`, `variorum:swhid` and `variorum:spdx` claim shapes
-- [x] `tools/variorum.py` — reference CLI 0.6.0 (validator, `conform` runner, four bridge checks, stdlib only)
+- [x] `tools/variorum.py` — reference CLI 0.6.1 (validator, `conform` runner, four bridge checks, `show` renders tool chains, stdlib only)
 - [x] `docs/adoption.md` — the core-only adoption path, performed on `instruisto`'s release `github-copilot-agents/v1.1.0` rather than summarised afterwards; §12 covers adopting an artifact you did not produce
-- [x] `docs/case-studies/` — an index with the bar every case study must meet, and `software-tools.md`: the first real adopter, an archive that publishes artifacts it did not make, with one `core` record for a 2002 installer it fetched back from its own live site
+- [x] `docs/case-studies/` — an index with the bar every case study must meet, plus two adopters: `software-tools.md` (an archive that publishes artifacts it did not make, one `core` record for a 2002 installer fetched back from its own live site) and `3d-printerator.md` (a CAD repository that builds what it records, one record with `recipe`, `lineage` and a `state` ending in `rejected`)
 - [x] `examples/` — seven real records in five directories (records *this* repository ships; a case study's record lives in the adopter's)
-- [x] `tests/` — 115 unit tests (validator + four bridges + vector-suite integrity + relative-link integrity + the README record must be a shipped one + every case study must be listed in its index)
+- [x] `tests/` — 120 unit tests (validator + four bridges + vector-suite integrity + relative-link integrity + the README record must be a shipped one + every case study must be listed in its index + `show` must render both `recipe.tool` shapes)
 - [x] `.github/workflows/ci.yml` — tests, conformance with coverage, examples on Python 3.11/3.13
 - [x] ADRs 0001–0013
 
 ## Verified on the last session
 
-- `python3 -m unittest discover -s tests` → 115 tests OK.
+- `python3 -m unittest discover -s tests` → 120 tests OK.
 - `python3 tools/variorum.py conform --coverage` → 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
 - All seven records under `examples/*/*.variorum.json` validate.
-- The case study's record was checked against the adopter's own bytes, not against its database: `Gel86a.zip` was downloaded back from `software-tools.pcabrera.com` through the general downloads password (2,520,484 B, `Content-Length` agreeing), `unzip -t` reported no errors, and its SHA-256 — `fc0cadf23dc1…` — matched the value the archive's panel stored for that row. The reference CLI reports `OK — record conforms to Variorum 0.1 (core)` with `--artifact`; the adopter's `check` returns `0` on the real file and `1` on a different one.
-- `software-tools` commit `e0a739f` is pushed; that repository's tree is clean and its HEAD equals its remote.
+- `software-tools`' record still validates against the artifact it describes (`fc0cadf2…`, 2,520,484 B); that repository's commit `e0a739f` is pushed and its tree is clean.
+- `3d-printerator`'s record validates with the reference CLI and `--artifact`, with no warnings: `OK — record conforms to Variorum 0.1 (core, lineage, recipe)`. The adopter's `check` returns `0` against the STL (374,684 B, `cf3a7707…`) and the `.scad` (28,155 B, `916c01f5…`), and `1` against a different STL and a different `.scad`.
+- The triangulation measurement behind the missing `determinism`: the committed STL and two consecutive rebuilds with OpenSCAD 2021.01 contain the same 7,492 triangles exactly (same vertices, normals and attribute words) and three different digests, because the facet order differs.
+- `3d-printerator` commit `faa987c` is pushed; that repository's tree is clean and its HEAD equals its remote.
 
 ## What does not exist yet
 
 - [ ] `spec/90-extensions/prov.md` — W3C PROV (planned in the extensions README, outside the four Phase 2 boxes)
-- [ ] Two more real repositories adopted as case studies — Phase 3's remaining work before the site
+- [ ] A third real repository adopted as a case study — Phase 3's remaining work before the site
 - [ ] Published site (no domain assigned)
 - [ ] Registration in `u-onoma` and `_index`
 - [ ] Owner review of the draft and decision to transfer to `cazucito`
 
 ## Next
 
-See [HANDOFF.md](HANDOFF.md). Phase 3's guide is closed and the first case study is shipped. The next case study should be a project that *builds* what it records — the archive covered the hard direction (publishing artifacts you did not produce), so the second should exercise `recipe` or `state` on artifacts the project produces. `la-enpenso` and `du-vortoj` are already in `examples/`; the case study has to be a project that has not adopted the format yet.
+See [HANDOFF.md](HANDOFF.md). Two case studies are shipped; the third should cover what the first two did not. The archive exercised `core` on artifacts it did not produce; the CAD repository exercised `recipe`, `lineage` and `state` on an artifact it did. The open ground is a *content* project — a generative `recipe` with `determinism: "none"`, or `attestation` if the project is willing to sign. It has to be a project that has not adopted the format yet (`la-enpenso`, `du-vortoj` and `instruisto` are already in `examples/`).

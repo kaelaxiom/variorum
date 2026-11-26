@@ -14,7 +14,7 @@ This guide walks the `core` path on a real release — `instruisto`'s [`github-c
 | `scheme` | the version scheme the project **already uses**, and its label |
 | `created` | when the record was written, RFC 3339 with an explicit offset (`CORE-5`, `CORE-6`) |
 
-`producer` and `extensions` are optional. So are `lineage`, `recipe`, `state` and `attestation` — those are separate classes, adopted later or never ([00-overview.md](../spec/00-overview.md) §5).
+`producer` and `extensions` are optional. So are `lineage`, `recipe` and `attestation` — separate classes, adopted later or never ([00-overview.md](../spec/00-overview.md) §5). `state` is not a class: when it is present it belongs to `core` (`CON-3`), so a project that knows its artifact's lifecycle can record it without claiming anything beyond the minimum.
 
 ## 2. Stamp the artifact
 
@@ -133,7 +133,7 @@ Conformance is graded (invariant 4), and partial adoption is legitimate and decl
 
 - **`lineage`** — when an artifact derives from another and the relation is known. Not before: a guess is worse than silence.
 - **`recipe`** — when a build or a generation can be described well enough to attempt reproduction.
-- **`state`** — when the project has a lifecycle with real transitions and dates.
+- **`state`** — not a class: it is part of `core` whenever the member is present (`CON-3`). What you postpone is the lifecycle evidence itself: transitions with real actors and dates, not a lifecycle reconstructed from a changelog.
 - **`attestation`** — when someone needs to verify *who* asserts the record.
 
 A record that declares `["core"]` is not a lesser record. It is a record that answers one question exactly, and the specification would rather have it than a record full of reconstructed history.

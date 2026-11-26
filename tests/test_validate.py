@@ -15,10 +15,14 @@ remain valid, ADR-0005).
 
 from __future__ import annotations
 
+import argparse
+import contextlib
 import copy
 import hashlib
+import io
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -713,6 +717,52 @@ class GraphTests(unittest.TestCase):
                              lineage={"parents": [{"id": first_id, "relation": "revision"}]})
         _edges, cycles = variorum.build_graph([first, second])
         self.assertTrue(cycles, "a cycle should have been detected")
+
+
+class ShowTests(unittest.TestCase):
+    """`show` must render every tool shape the schema allows (REC-5)."""
+
+    def test_a_single_tool_object(self) -> None:
+        self.assertEqual(
+            variorum.render_tool_chain({"name": "openscad", "version": "2021.01"}),
+            "openscad 2021.01",
+        )
+
+    def test_a_tool_chain(self) -> None:
+        chain = [
+            {"name": "openscad", "version": "2021.01"},
+            {"name": "orca-slicer", "version": "2.2"},
+        ]
+        self.assertEqual(
+            variorum.render_tool_chain(chain), "openscad 2021.01, orca-slicer 2.2"
+        )
+
+    def test_a_generative_tool_prints_its_model(self) -> None:
+        self.assertEqual(
+            variorum.render_tool_chain({"name": "higgsfield", "model": "grok_video"}),
+            "higgsfield/grok_video",
+        )
+
+    def test_an_unknown_shape_is_not_a_crash(self) -> None:
+        for value in (None, [], {}, [{}], "openscad"):
+            with self.subTest(value=value):
+                self.assertEqual(variorum.render_tool_chain(value), "?")
+
+    def test_show_prints_a_chain_instead_of_a_question_mark(self) -> None:
+        record = record_with(
+            recipe={
+                "kind": "build",
+                "source": {"digest": "sha256:" + "d" * 64},
+                "tool": [{"name": "openscad", "version": "2021.01"}],
+            }
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "variorum.json"
+            path.write_text(json.dumps(record), encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                variorum.command_show(argparse.Namespace(record=str(path)))
+        self.assertIn("via openscad 2021.01", output.getvalue())
 
 
 class ExamplesTests(unittest.TestCase):

@@ -12,5 +12,6 @@ Every case study in this directory meets the same bar:
 | Case study | Project | Artifact recorded | Classes |
 |---|---|---|---|
 | [software-tools](software-tools.md) | A private archive of software one person has used since 1991 — 58 fichas, a PHP + SQLite site, 91 download rows in its exported inventory | `Gel86a.zip`, the final GEL 8.6a installer (2002), fetched back from the live site | `core` |
+| [3d-printerator](3d-printerator.md) | A repository of 3D-print solutions for real problems — two designs, parametric OpenSCAD 2021.01 sources, binary STLs, SLA resin | `aw9-d2strap-case-v2-holder.stl`, the complete v2 two-watch separator (374,684 B), decided against before printing | `core`, `lineage`, `recipe` |
 
-The three Phase 3 case studies are adopted one at a time; the archive is the first because it is the hardest case: it publishes artifacts it did not produce.
+The three Phase 3 case studies are adopted one at a time. The archive came first because it is the hardest direction — it publishes artifacts it did not produce. The second was chosen for the opposite reason: it builds what it records, so `recipe` and `state` could be exercised on an artifact the project produced, including one that lost.

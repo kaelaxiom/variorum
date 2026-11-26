@@ -29,7 +29,7 @@
 - [x] `docs/adoption.md` — one-page guide, core-only path first
 - [ ] Adopt in three real repositories as case studies
   - [x] [`software-tools`](../docs/case-studies/software-tools.md) — an archive that publishes artifacts it did not produce; one artifact, `core`, emitted by the project's own tool
-  - [ ] Second case study
+  - [x] [`3d-printerator`](../docs/case-studies/3d-printerator.md) — a CAD repository that builds what it records; one artifact with `recipe`, `lineage` and a `state` that ends in `rejected`
   - [ ] Third case study
 - [ ] Public site (domain not yet decided)
 - [ ] Announce

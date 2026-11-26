@@ -1,6 +1,29 @@
 # HANDOFF
 
-## Last session — 2026-11-25 (Phase 3: the first case study, in `software-tools`)
+## Last session — 2026-11-25 (Phase 3: the second case study, in `3d-printerator`)
+
+**Did:** shipped the case study the previous run had written but not committed, then adopted the format in a second real repository — one that builds what it records.
+
+- **First, the previous run's work.** Re-verified (`conform --coverage` 188/188, seven examples, the adopter's record still matching its artifact) and committed as `8dbb6dd`: `docs/case-studies/` (index and `software-tools.md`), `docs/adoption.md` §12, the README pointer and `CaseStudyIndexTests`.
+- **`3d-printerator`** (public repository, two designs, parametric OpenSCAD 2021.01, ANYCUBIC Photon Mono 4K) now has `tools/variorum_record.py` (290 lines, stdlib: `stamp` computes the artifact digest and size and the `--source` digest, writing both into `recipe.source` and `lineage.parents`; `check` recomputes all three; a claims file that states a `digest` or an `id` is refused with exit 2), `designs/aw9-d2strap-case/v2/cf3a7707ccdb.variorum.json`, its `.claims.json`, `docs/variorum.md` (Spanish) and a README pointer. Commit `faa987c`, pushed; tree clean, HEAD equals remote.
+- **The record** describes the complete v2 two-watch separator (`aw9-d2strap-case-v2-holder.stl`, 374,684 B, `model/stl`) with `core`, `lineage` (`render` of the `.scad`, 28,155 B, `916c01f5…`), `recipe` (build, `openscad 2021.01`, `part=holder`, `export_format=binstl`) and `state` `candidate → rejected`: the design was committed as the version to print, and two days later the owner bought a TPU bumper instead. `at` uses commit timestamps because the project has no decision log; the first transition names `claude-code` and the case study says plainly that the commit carries the owner's git identity — that gap is what `attestation` is for.
+- **The measurement that matters:** re-running the declared toolchain reproduces the geometry exactly (same 7,492 triangles, normals, attribute words, header and bounding box) but not the bytes — the facet order varies between consecutive runs, so three files with one geometry have three digests. `determinism: "full"` is therefore forbidden by `REC-13`, `"none"` would misstate the geometry, and the member is absent.
+- **Two defects adoption found on this side:** `show` printed `recipe build via ?` for a legal `recipe.tool` array (fixed in 0.6.1 with `ShowTests`, five new tests); `docs/adoption.md` §1 and §9 called `state` a separate conformance class when `CON-3` puts it inside `core` (fixed in both places).
+- **On this side:** `docs/case-studies/3d-printerator.md`, the index row, the PLAN box, CHANGELOG and STATE.
+
+**Verified:** 120 unit tests OK; `conform --coverage` 188/188 PASS (96/133 referenced, 37 exempt, 0 uncovered); seven examples validate; the adopter's record validates with `--artifact` and no warnings; its `check` returns `0` on the STL and the `.scad`, and `1` on a different STL and a different `.scad`; both repositories pushed and clean.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Third case study.** Open ground: a content project with a generative `recipe` (`determinism: "none"`), or one willing to sign (`attestation`). Not `la-enpenso`, `du-vortoj` or `instruisto` — all three are already in `examples/`.
+- **The `determinism` gap is a spec question for the owner.** `REC-12` allows `none`, `seeded`, `full`; a CAD build can determine every vertex and none of the bytes. A fourth value (e.g. `geometry`) would be a normative change — ADR, schema enum, vectors, CHANGELOG — and one measurement is not enough to patch a shipped enum. Decide before 0.2 whether the gap gets a value or a rationale sentence in `REC-12`.
+- **`CLAUDE.md` in `3d-printerator` was not updated:** it is an approval-protected agent-instruction file and this run had no approver. `tools/` and the record convention are documented in `docs/variorum.md` and the README; the owner can add one Structure line and one rule if the agent contract should list them.
+- The `.scad` has no record of its own. Its digest is verifiable from the repository and `LIN-8` allows an unresolvable parent, but a consumer must not claim the lineage complete (`LIN-9`). Recording the source is that project's decision.
+- Consistency item (open since the C2PA bridge): `C2P-1`, `SWH-1` and `SPDX-1` reject an explicit JSON `null` claim; `SEM-1` treats `null` as absent and returns early. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line.
+- `conform --verbose` still has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` still holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays a separate planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-25 (Phase 3: the first case study, in `software-tools`)
 
 **Did:** adopted Variorum in a second repository — a real one, not another record under `examples/` — and wrote the case study from that side.
 

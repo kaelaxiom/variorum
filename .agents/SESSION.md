@@ -301,3 +301,44 @@ Turn Phase 3's first case study from a plan into an adoption performed in anothe
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - `software-tools` cannot serve the record beside the download without a streamer change: owner decision.
 - SemVer bridge still treats an explicit `null` claim as absent while C2PA, SWHID and SPDX reject it; PROV bridge planned; `conform --verbose` still has no skipped-bridge report; one `semver.tag` per record.
+
+# SESSION — 2026-11-25 (Phase 3: the second case study, in `3d-printerator`)
+
+## Objective
+
+Close the case study the previous run left uncommitted, then adopt the format in a second real repository — one that builds what it records — and write it up from the adopter's side.
+
+## Done
+
+- **Committed the previous run's work after re-verifying it.** `conform --coverage` 188/188, seven examples, the adopter's record still matching its artifact; commit `8dbb6dd` carries `docs/case-studies/` (index + `software-tools.md`), `docs/adoption.md` §12, the README pointer and `CaseStudyIndexTests`.
+- **Chose `3d-printerator` as the second adopter** because it is the opposite direction from the archive: a CAD repository where the STL is the output of a text source and a declared toolchain, and where the repository's own convention (`designs/<solution>/vN/`, OpenSCAD 2021.01, `--export-format binstl`) already names the recipe Variorum asks for.
+- **Wrote `tools/variorum_record.py` in the adopter's repository** (290 lines, stdlib): `stamp` computes the artifact's digest and size and the `--source` digest, writing both into `recipe.source` and `lineage.parents`; `check` recomputes all three. No option accepts a digest, and a claims file that states a `digest` or an `id` is rejected with exit 2 — this record has two digests in it, so the guard had to cover both.
+- **Stamped one record** for `aw9-d2strap-case-v2-holder.stl` (374,684 B, `cf3a7707…`): `core`, `lineage` (`render` of the 28,155 B `.scad`, `916c01f5…`), `recipe` (build, `openscad 2021.01`, `part=holder`, `export_format=binstl`) and `state` `candidate → rejected`.
+- **Measured instead of assuming determinism.** OpenSCAD 2021.01 was installed on this machine at the exact version the repository declares, so the build was re-run twice: the committed STL and both rebuilds hold the same 7,492 triangles *exactly* — same vertices, normals, attribute words, header and bounding box — and three different digests, because the facet order differs. That is why the record has no `determinism` member: `"full"` is forbidden by `REC-13`, `"none"` would misstate the geometry, and `REC-12` has no value for the case in between.
+- **Exercised the guards before saying they work:** a claims file with a digest → exit 2 with the offending path; `check` against a different STL → exit 1 with both digests; `check` against a different `.scad` → exit 1 with both source digests and the parent mismatch.
+- **Adoption found two defects on this side, both fixed:** `show` printed `recipe build via ?` for a legal `recipe.tool` array (`REC-5`, schema `oneOf`) — fixed in 0.6.1 with `ShowTests`; `docs/adoption.md` §1 and §9 called `state` a separate class when `CON-3` puts it inside `core` — fixed in both places.
+- **On this side:** `docs/case-studies/3d-printerator.md`, the index row, the PLAN box, CHANGELOG and STATE. The case study quotes the adopter's record verbatim, checked by parsing both files and comparing them member for member.
+
+## Numbers
+
+- 120 unit tests OK (was 115; `ShowTests` adds five).
+- `conform --coverage`: 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
+- Seven example records validate.
+- Adopter's record: reference `validate --artifact` → `OK — record conforms to Variorum 0.1 (core, lineage, recipe)` with no warnings; adopter's `check` → `0` on both files, `1` on a different STL and a different `.scad`.
+- `3d-printerator` commit `faa987c` (511 insertions, none in the design files).
+
+## Decisions
+
+- **One record out of seven files, again.** The fit tests never had a lifecycle (`STA-7` would force `draft` on files that already served their purpose) and v1 has no documented approval, so `superseded` — reachable only from `approved` or `published` — would have been invented. Silence is a legitimate answer.
+- **`at` is the commit timestamp.** The project has no decision log apart from git; citing the moment the decision entered the history is verifiable, and reconstructing an hour nobody wrote down is not.
+- **The first transition names the coding agent, not the owner.** `CLAUDE.md` is the agent's contract and the commit bodies narrate its work; the commits carry the owner's git identity, which is exactly why `attestation` exists and why the case study says it was not adopted.
+- **No `sequence`.** The project's label orders design folders, and three STLs of one iteration would tie at the same number; an order that cannot increase strictly (`SCH-9`) is better omitted.
+- **The `determinism` gap is written down, not patched.** A fourth enum value would be a normative change needing an ADR, schema, vectors and CHANGELOG, and one measurement does not justify changing a shipped format.
+
+## Open
+
+- Third case study: a content project with a generative recipe, or one willing to sign.
+- The `determinism` value question — owner's call before 0.2.
+- `CLAUDE.md` in `3d-printerator` was not edited (approval-protected, no approver in this run); the tool is documented in `docs/variorum.md` and the README.
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- The older consistency items unchanged: SEM `null`, `conform --verbose`, one `semver.tag`, `SPDX-7`, CycloneDX, PROV.
