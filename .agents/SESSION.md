@@ -376,3 +376,34 @@ Ship the case study the previous run wrote but did not commit, after checking it
 - Three normative questions for 0.2, each needing an ADR: `REC-12`'s missing determinism value, `REC-9`'s single prompt field, and a `generated` state.
 - Owner review, transfer to `cazucito`, `u-onoma`/`_index` registration.
 - The older consistency items unchanged: SEM `null`, `conform --verbose`, one `semver.tag`, `SPDX-7`, CycloneDX, PROV.
+
+# SESSION — 2026-11-27 (the PROV bridge, closed)
+
+## Objective
+
+Finish the bridge the previous run left written, uncommitted and red — and decide whether what it claims about PROV is true.
+
+## Done
+
+- **Fixed the one failing test, and confirmed the rule was not at fault.** `ProvBridgeTests.test_the_claim_requires_no_section_and_forbids_none` passed its sections to `claimed(**claim)`, which places members inside `extensions["variorum:prov"]`; `PROV-3` closes that object, so the rejection was correct. The test now uses `record_with(extensions=..., producer=..., lineage=..., recipe=..., state=...)`. The bridge's own vector `prov/claim-survives-a-full-projection` already asserted the valid shape, which is what identified the helper as the defect.
+- **Audited every PROV citation against the published documents** before committing. PROV-DM: §5.1.1/§5.1.2/§5.3.1 definitions; §2.1.2 "PROV does not attempt to specify the conditions under which derivations exist"; §5.2.2 revision, §5.2.3 quotation, §5.2.4 primary source; §5.7.1 "two entities (resp. activities, agents) are equal if they have the same identifier"; §5.7.2 the five reserved attributes; §5.7.2.5 `prov:value` may occur at most once, and Example 53's two entities sharing a value; §5.7.3 "interpretation is outside the scope of PROV"; §5.7.5 qualified name → IRI; §5.4 "a bundle is a named set of provenance descriptions, and is itself an entity"; §5.5.1 "a specialization is not, as defined here, also an influence"; §6 reserved extensibility attributes and Example 56 (a translation typed as a sub-relation of derivation). PROV-CONSTRAINTS: §1.2 anonymous toplevel instance and "PROV instances need not be valid"; §2.4 a graph is violated only by a cycle that includes a strictly-precedes edge; §7.2 "the names of its bundles are distinct". PROV-O: `generatedAtTime` "the time at which an entity was completely created and is available for use"; `invalidatedAtTime` "no longer usable".
+- **Corrected one quotation.** The draft claimed §5.5.2 says alternates "fix some aspects of some common thing"; the section says "Two alternate entities present aspects of the same thing". Fixed in `spec/90-extensions/prov.md` 90.6.
+- **Finished the documentation the previous run had not started:** README (both PROV mentions and the 188→200 vector count), `spec/00-overview.md` §8, `spec/90-extensions/README.md` (prov.md Written, five bridges, ADR-0014), `spec/vectors/README.md` (group row), CHANGELOG (Added/Changed), CONTEXT, PLAN, STATE, this file and HANDOFF.
+- **One unrelated defect, fixed while verifying:** `variorum validate <directory>` raised `IsADirectoryError` as a traceback although `load_record`'s docstring promises a readable error. It now exits 1 with `<path>: not a file` — the sentence `digest` and `stamp` already use — and `RecordLoadingTests` covers a directory and a missing path.
+
+## Numbers
+
+- 128 unit tests OK.
+- `conform --coverage`: 200/200 PASS; 99/139 rules referenced, 40 exempt, 0 uncovered.
+- Seven example records validate.
+
+## Decisions
+
+- **A vector and a unit test are two implementations of one rule; when they disagree, read both before editing either.** The failing test said `PROV-3` was wrong; the vector exercising the same rule said the test was. The vector won because it is the conformance contract (`ADR-0006`) and the test is a convenience around it.
+- **A projection bridge is worth writing even though it has no document to point at.** The four earlier bridges answer "where does the record point"; this one answers "what does each member become", and the three mistakes it names — `created` on the entity, `producer` as attribution, `generation` as Generation — are mistakes a reader would otherwise make plausibly.
+
+## Open
+
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- Three normative questions for 0.2: `REC-12`'s determinism value, `REC-9`'s single prompt field, a `generated` state.
+- The older consistency items: SEM `null`, `conform --verbose`, one `semver.tag`, `SPDX-7`, CycloneDX.

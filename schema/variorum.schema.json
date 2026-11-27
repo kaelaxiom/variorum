@@ -275,6 +275,18 @@
               "description": "SPDX-4: the SPDX identifier of the package or file element that describes this artifact (§7.2, §8.2). Absent means the claim points at the document without naming an element; SPDXRef-DOCUMENT is refused because a document is not one of the things it describes."
             }
           }
+        },
+        "variorum:prov": {
+          "type": "object",
+          "description": "PROV-1: the claim that this record projects onto the W3C PROV family as spec/90-extensions/prov.md fixes it (ADR-0014). A projection, not a pointer: the claim names the edition and carries nothing to copy, because PROV gives a document no required identity (PROV-CONSTRAINTS §1.2) and reserves no attribute that hashes bytes (§5.7.2).",
+          "required": ["version"],
+          "additionalProperties": false,
+          "properties": {
+            "version": {
+              "const": "2013",
+              "description": "PROV-2: the PROV family as recommended on 30 April 2013. PROV is not versioned — the family was published once — so a date is the only edition there is."
+            }
+          }
         }
       }
     }

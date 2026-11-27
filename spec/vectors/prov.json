@@ -1,0 +1,340 @@
+{
+  "suite": "variorum-vectors/1",
+  "group": "prov",
+  "description": "Rules from spec/90-extensions/prov.md: the opt-in bridge that fixes how a record projects onto the W3C PROV family (PROV-1..PROV-6). Every vector names the bridge it exercises (CON-28), so an implementation that does not claim it skips them. PROV-4, PROV-5 and PROV-6 are consumer obligations and are exempted in exemptions.json. The claim has one member, so the vectors are the whole shape of the bridge: what is refused here is refused because PROV gives a document no identity and no hash to copy.",
+  "base": {
+    "variorum": "0.1",
+    "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+    "artifact": {
+      "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+      "size": 111,
+      "mediaType": "text/plain",
+      "name": "hello.txt"
+    },
+    "scheme": {
+      "name": "none"
+    },
+    "created": "2026-11-22T12:00:00-06:00",
+    "extensions": {
+      "variorum:prov": {
+        "version": "2013"
+      }
+    }
+  },
+  "vectors": [
+    {
+      "name": "prov/claim-must-be-an-object",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "'2013' is the version, not the claim: a bare string leaves no room for the member the bridge may grow, and cannot be told apart from a value another extension might define under the same key.",
+      "rules": [
+        "PROV-1"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": "2013"
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-1"
+        ]
+      }
+    },
+    {
+      "name": "prov/claim-must-not-be-null",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "JSON null is not an object and not an absent member: a record that writes the key with no claim is rejected, exactly as the schema types it.",
+      "rules": [
+        "PROV-1"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": null
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-1"
+        ]
+      }
+    },
+    {
+      "name": "prov/claim-must-not-be-an-array",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "An array of versions would be a claim about several editions, and PROV has one: the family recommended on 30 April 2013.",
+      "rules": [
+        "PROV-1"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": [
+            "2013"
+          ]
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-1"
+        ]
+      }
+    },
+    {
+      "name": "prov/version-is-required",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "A claim that names no edition cannot say which PROV family its projection follows, and an empty object is silence wearing the claim's clothes.",
+      "rules": [
+        "PROV-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {}
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-2"
+        ]
+      }
+    },
+    {
+      "name": "prov/version-must-be-the-covered-family",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "'2.0' is the version PROV does not have: the family was recommended once, on 30 April 2013, so a later-looking value names nothing.",
+      "rules": [
+        "PROV-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {
+            "version": "2.0"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-2"
+        ]
+      }
+    },
+    {
+      "name": "prov/version-must-be-a-string",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "The number 2013 is not the string '2013': a version is a token, and a numeric one would sort by arithmetic in some consumers and not in others.",
+      "rules": [
+        "PROV-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {
+            "version": 2013
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-2"
+        ]
+      }
+    },
+    {
+      "name": "prov/claim-carries-no-document",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "PROV gives a document no required identity, so a 'document' member would be a URI the producer typed and nothing could resolve; 90.8 argues why the claim has one member.",
+      "rules": [
+        "PROV-3"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {
+            "version": "2013",
+            "document": "https://example.org/prov/hello.json"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-3"
+        ]
+      }
+    },
+    {
+      "name": "prov/claim-carries-no-entity",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "'ex:artifact-v2' is a PROV identifier, and no PROV identifier becomes the artifact's identity: the record's 'id' is the digest, and a second naming member would invite the reverse mapping 90.6 refuses.",
+      "rules": [
+        "PROV-3"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {
+            "version": "2013",
+            "entity": "ex:artifact-v2"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-3"
+        ]
+      }
+    },
+    {
+      "name": "prov/claim-carries-no-checksum",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "PROV reserves five attributes and none hashes bytes (§5.7.2), so a checksum in the claim could only duplicate the digest or carry a value with no subject.",
+      "rules": [
+        "PROV-3"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {
+            "version": "2013",
+            "checksum": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f"
+          }
+        }
+      },
+      "expect": {
+        "valid": false,
+        "rules": [
+          "PROV-3"
+        ]
+      }
+    },
+    {
+      "name": "prov/claim-with-version-only",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "The whole claim: one date. A record that carries nothing else is not claiming less than the bridge defines, because the bridge defines nothing else.",
+      "rules": [
+        "PROV-2"
+      ],
+      "patch": {
+        "extensions": {
+          "variorum:prov": {
+            "version": "2013"
+          }
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "prov/claim-survives-a-full-projection",
+      "class": "core",
+      "bridge": "variorum:prov",
+      "description": "Every section the projection names may be present at once: lineage with a typed edge, a build recipe with a source and a toolchain, a state whose first transition is draft→candidate, and a producer. The claim requires no section and forbids none.",
+      "rules": [
+        "PROV-1",
+        "PROV-3"
+      ],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        },
+        "scheme": {
+          "name": "none"
+        },
+        "created": "2026-11-22T12:00:00-06:00",
+        "producer": {
+          "name": "cazucito",
+          "kind": "human"
+        },
+        "lineage": {
+          "parents": [
+            {
+              "id": "urn:variorum:sha256:1111111111111111111111111111111111111111111111111111111111111111",
+              "relation": "revision"
+            }
+          ]
+        },
+        "recipe": {
+          "kind": "build",
+          "source": {
+            "ref": {
+              "uri": "https://github.com/cazucito/variorum",
+              "commit": "0000000000000000000000000000000000000000"
+            }
+          },
+          "tool": {
+            "name": "printf",
+            "version": "1.0"
+          }
+        },
+        "state": {
+          "current": "candidate",
+          "transitions": [
+            {
+              "from": "draft",
+              "to": "candidate",
+              "actor": {
+                "name": "cazucito",
+                "kind": "human"
+              },
+              "at": "2026-11-27T00:00:00-06:00"
+            }
+          ]
+        },
+        "extensions": {
+          "variorum:prov": {
+            "version": "2013"
+          },
+          "variorum:conformance": [
+            "core",
+            "lineage",
+            "recipe"
+          ]
+        }
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "name": "prov/a-record-without-the-claim-says-nothing",
+      "class": "core",
+      "description": "The scheme is literally named 'prov', and the record says nothing about PROV: a bridge that fired on a name rather than on a claim would make core conformance stricter than SCH-7 allows (ADR-0009). The one finding is the SCH-10 warning an unregistered name earns.",
+      "rules": [],
+      "record": {
+        "variorum": "0.1",
+        "id": "urn:variorum:sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+        "artifact": {
+          "digest": "sha256:a370e4f11b0e5927403319b7884ba09608eb03c3f0c3f55723235df8bef14f7f",
+          "size": 111,
+          "mediaType": "text/plain",
+          "name": "hello.txt"
+        },
+        "scheme": {
+          "name": "prov",
+          "version": "2013"
+        },
+        "created": "2026-11-22T12:00:00-06:00"
+      },
+      "expect": {
+        "valid": true
+      }
+    }
+  ]
+}

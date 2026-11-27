@@ -166,7 +166,7 @@ Bridges to adjacent standards live in `spec/90-extensions/`. A bridge may define
 | **SWHID** | Persistent content identifiers for software source code | Complementary: a SWHID may appear as an identifier inside `extensions`, and `artifact.digest` covers non-source artifacts SWHID does not address |
 | **C2PA / Content Credentials** | Signed provenance manifests embedded in media | Complementary: C2PA answers *what was done to these pixels*; Variorum answers *which artifact, in which state, derived from what*. An ADR records the mapping |
 | **SPDX / CycloneDX (SBOM, ML-BOM)** | Inventory of components | Complementary: the BOM describes what is inside the artifact; Variorum identifies the artifact and its place in a graph |
-| **W3C PROV** | Generic provenance model (entity, activity, agent) | Variorum is a concrete, minimal serialisation of a PROV subset for artifacts; the alignment is a planned extension bridge |
+| **W3C PROV** | Generic provenance model (entity, activity, agent) | A record projects onto a PROV instance member by member; the bridge fixes which sections become entities, activities and agents, and which PROV terms never become record members ([90-extensions/prov.md](90-extensions/prov.md)) |
 | **SLSA / in-toto** | Supply-chain attestations for builds | Complementary; a SLSA attestation may be carried in `extensions` and referenced by `attestation` |
 | **AI Provenance Protocol (APP)** | Provenance for AI-generated content | Adjacent; APP describes generation, Variorum describes identity, lineage and lifecycle across all artifacts, AI or not |
 

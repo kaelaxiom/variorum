@@ -38,7 +38,7 @@ The spec and the schema are two renderings of the same contract. Neither is allo
 
 ## Bridges are claims, not classes
 
-A bridge to another standard (SemVer first; C2PA, SWHID, SPDX and PROV planned) never applies because of a scheme name. A record claims the bridge by carrying an extension key — `extensions["variorum:semver"]` — and the bridge's rules bind only that record. The claim is visible data, an unclaiming consumer ignores it as `CORE-3` requires, and the four conformance classes stay four (ADR-0009). Bridge rules are covered by vectors marked with the extension key (ADR-0010).
+A bridge to another standard (SemVer, C2PA, SWHID, SPDX and PROV written; CycloneDX planned) never applies because of a scheme name. A record claims the bridge by carrying an extension key — `extensions["variorum:semver"]` — and the bridge's rules bind only that record. The claim is visible data, an unclaiming consumer ignores it as `CORE-3` requires, and the four conformance classes stay four (ADR-0009). Bridge rules are covered by vectors marked with the extension key (ADR-0010).
 
 ## Known tensions
 

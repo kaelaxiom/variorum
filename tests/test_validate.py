@@ -674,6 +674,87 @@ class SpdxBridgeTests(unittest.TestCase):
         self.assert_accepted(record_with(extensions={"org.example:sbom": self.NAMESPACE}))
 
 
+class ProvBridgeTests(unittest.TestCase):
+    """PROV-1..PROV-3: the bridge fixes a projection and binds only the records that claim it (ADR-0014)."""
+
+    def claimed(self, **claim) -> dict:
+        return record_with(extensions={"variorum:prov": {"version": "2013", **claim}})
+
+    def assert_rejected(self, record: dict, expected_rule: str) -> None:
+        report = variorum.validate_record(record)
+        rules = {issue.rule for issue in report.errors}
+        self.assertFalse(report.ok, "the record should have been rejected")
+        self.assertIn(expected_rule, rules, f"expected {expected_rule}, got {sorted(rules)}: {report.errors}")
+
+    def assert_accepted(self, record: dict) -> None:
+        report = variorum.validate_record(record)
+        self.assertTrue(report.ok, f"the record should have been accepted: {report.errors}")
+
+    def test_claim_must_be_an_object(self) -> None:
+        for claim in ("2013", None, [], ["2013"], 2013):
+            with self.subTest(claim=claim):
+                self.assert_rejected(record_with(extensions={"variorum:prov": claim}), "PROV-1")
+
+    def test_version_is_required_and_closed(self) -> None:
+        self.assert_rejected(record_with(extensions={"variorum:prov": {}}), "PROV-2")
+        for version in ("2.0", "2013-04-30", "PROV-2013", 2013, None):
+            with self.subTest(version=version):
+                self.assert_rejected(self.claimed(version=version), "PROV-2")
+        self.assert_accepted(self.claimed())
+
+    def test_the_claim_defines_one_member(self) -> None:
+        """90.8: a document, an entity or a checksum would point at something PROV does not define."""
+        for extra in (
+            {"document": "https://example.org/prov/hello.json"},
+            {"entity": "ex:artifact-v2"},
+            {"checksum": "sha256:" + "a" * 64},
+            {"bundle": "urn:variorum:sha256:" + "b" * 64},
+        ):
+            with self.subTest(extra=extra):
+                self.assert_rejected(self.claimed(**extra), "PROV-3")
+
+    def test_the_claim_requires_no_section_and_forbids_none(self) -> None:
+        """A projection of a core record is legal; so is one that carries every section it can name."""
+        self.assert_accepted(self.claimed())
+        # The sections are top-level members of the record, never members of the
+        # claim: PROV-3 closes the claim object, and a projection names sections
+        # that live beside it.
+        full = record_with(
+            extensions={"variorum:prov": {"version": "2013"}},
+            producer={"name": "cazucito", "kind": "human"},
+            lineage={"parents": [{"id": "urn:variorum:sha256:" + "c" * 64, "relation": "revision"}]},
+            recipe={
+                "kind": "build",
+                "source": {"ref": {"uri": "https://github.com/cazucito/variorum", "commit": "0" * 40}},
+                "tool": {"name": "printf", "version": "1.0"},
+            },
+            state={
+                "current": "candidate",
+                "transitions": [
+                    {
+                        "from": "draft",
+                        "to": "candidate",
+                        "actor": {"name": "cazucito", "kind": "human"},
+                        "at": "2026-11-27T00:00:00-06:00",
+                    }
+                ],
+            },
+        )
+        self.assert_accepted(full)
+
+    def test_without_the_claim_nothing_changes(self) -> None:
+        """ADR-0009: the bridge binds a claim, never a name — even a scheme literally named 'prov'."""
+        self.assert_accepted(record_with())
+        self.assert_accepted(record_with(scheme={"name": "prov", "version": "2013"}))
+        self.assert_accepted(record_with(extensions={"org.example:prov": {"version": "2013"}}))
+
+    def test_the_reference_tool_announces_the_bridge(self) -> None:
+        """The coverage scanner only counts families it knows: a bridge without one is invisible."""
+        self.assertIn("PROV", variorum.RULE_FAMILIES)
+        self.assertEqual(variorum.PROV_BRIDGE, "variorum:prov")
+        self.assertEqual(variorum.PROV_VERSIONS, ("2013",))
+
+
 class SeverityTests(unittest.TestCase):
     def test_warnings_do_not_make_a_report_fail(self) -> None:
         report = variorum.validate_record(record_with(extensions={"note": "x"}))
@@ -785,6 +866,22 @@ class ExamplesTests(unittest.TestCase):
                     if class_name == "core":
                         continue
                     self.assertIn(class_name, record, f"{path} declares {class_name} but does not carry it")
+
+
+class RecordLoadingTests(unittest.TestCase):
+    """A path that is not a readable record gets a sentence, not a traceback."""
+
+    def test_a_directory_is_not_a_record(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(SystemExit) as raised:
+                variorum.load_record(Path(directory))
+        self.assertIn("not a file", str(raised.exception))
+
+    def test_a_missing_path_is_not_a_record(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(SystemExit) as raised:
+                variorum.load_record(Path(directory) / "absent.variorum.json")
+        self.assertIn("not a file", str(raised.exception))
 
 
 if __name__ == "__main__":

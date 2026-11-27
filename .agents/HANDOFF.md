@@ -1,6 +1,25 @@
 # HANDOFF
 
-## Last session — 2026-11-26 (Phase 3: the third case study, in `echo-language`)
+## Last session — 2026-11-27 (the PROV bridge, closed)
+
+**Did:** closed the PROV bridge the previous run left written, uncommitted and red — one failing unit test, no documentation or changelog, nothing pushed.
+
+- **The red was a defect in the test, not in the rule.** `ProvBridgeTests.test_the_claim_requires_no_section_and_forbids_none` built its "full" record with `claimed(**sections)`, which put `producer`, `lineage`, `recipe` and `state` *inside* the claim object, so `PROV-3` rejected it exactly as written. The test now builds the same record with `record_with(extensions=..., producer=..., lineage=..., recipe=..., state=...)`, sections at the top level where the projection names them. Nothing in `tools/variorum.py` changed for this: `prov/claim-survives-a-full-projection` already proved the rule accepts the valid shape, which is why the failure pointed at the helper.
+- **Every citation was opened before merging** — the lesson the C2PA bridge cost. Checked against PROV-DM (§5.1.1, §5.1.2, §5.3.1 definitions; §2.1.2 derivations determined "by unspecified means"; §5.2.2–§5.2.4 revision, quotation, primary source; §5.7.1 identifier equality; §5.7.2 the five reserved attributes; §5.7.2.5 `prov:value` at most once and Example 53's two entities with one value; §5.7.3 "interpretation is outside the scope of PROV"; §5.7.5 qualified name mapped to an IRI; §5.4 bundle; §5.5.1 specialization is not an influence; §6 sub-relations via `prov:type`, with Example 56's translation), PROV-CONSTRAINTS (§1.2 anonymous toplevel instance, "PROV instances need not be valid"; §2.4 a cycle is a violation only when it includes a strictly-precedes edge; §7.2 "the names of its bundles are distinct") and PROV-O (`generatedAtTime` "completely created and is available for use"; `invalidatedAtTime` "no longer usable").
+- **One quotation was wrong and is fixed.** The draft attributed to §5.5.2 the words "fix some aspects of some common thing"; §5.5.2 actually says "Two alternate entities present aspects of the same thing". The sentence now quotes that. It was a quotation with a section number next to it — the exact shape that survives review until someone follows it.
+- **Documentation:** `README.md` (bridge list, vector count 188→200, Status), `spec/00-overview.md` §8 (PROV now points at the bridge instead of calling it planned), `spec/90-extensions/README.md` (`prov.md` moved to Written; "all five bridges"; ADR-0014 sentence), `spec/vectors/README.md` (`prov` group row), CHANGELOG (`Added`: the bridge, 12 vectors, ADR-0014, `PROV-1`…`PROV-3` and tool 0.7.0; `Changed`: the schema claim, the three exemptions, the four docs), CONTEXT and PLAN.
+
+**Verified:** 128 unit tests OK; `conform --coverage` 200/200 PASS (99/139 referenced, 40 exempt, 0 uncovered); all seven examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Phase 3's case studies are complete; the site is what remains**, and it cannot start without a domain. Owner decision.
+- **Three normative questions the case studies produced**, each needing an ADR before 0.2: `REC-12` has no value for a build that fixes every vertex and no byte (from `3d-printerator`); `REC-9` assumes one prompt field where Suno's Custom mode has six (from `echo-language`, which puts the lyric field in `recipe.prompt` and the rest in `parameters`); and the lifecycle vocabulary has no `generated` state — a take that was produced but never judged fits neither `draft` nor `candidate`, and `STA-15` makes silence legal but says nothing about a generator recording its own output.
+- Consistency item (open since the C2PA bridge): `C2P-1`, `SWH-1`, `SPDX-1` and now `PROV-1` reject an explicit JSON `null` claim; `SEM-1` treats `null` as absent and returns early. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line.
+- `conform --verbose` still has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` still holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays the one planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-26 (Phase 3: the third case study, in `echo-language`)
 
 **Did:** closed Phase 3's case studies. The previous run had written `docs/case-studies/echo-language.md` and left it uncommitted; this session checked every claim in it against the files, corrected two, and shipped it.
 

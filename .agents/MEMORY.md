@@ -122,3 +122,9 @@ The lyric block in the project's prompt file and the `USLT` frame Suno writes in
 All three case studies ran `python3 tools/variorum.py` over paths relative to the adopter's repository — a directory that does not contain that tool. The block is correct only for a reader who happens to be standing in a second checkout, which is the one thing the prose never said.
 
 **Lesson:** every shell block in a document must state the directory it assumes. When two repositories meet in one command, say which side the tool comes from; the paths already say which side the data is on.
+
+## 2026-11-27 — A failing test and a passing vector can both be right
+
+`ProvBridgeTests` failed because its helper put a record's sections inside the bridge's claim object, and `PROV-3` rejects exactly that. The vector exercising the same rule (`prov/claim-survives-a-full-projection`) had the correct shape and passed. The test was the defect; the rule was doing its job.
+
+**Lesson:** when a unit test and a vector disagree about one rule, read both before editing either. The vector is the conformance contract; the test is a convenience built around it. Editing the validator to satisfy a badly built fixture turns a correct rule into a wrong one, and the suite would still be green.

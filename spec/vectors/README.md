@@ -22,6 +22,7 @@ python3 tools/variorum.py conform --coverage
 | `c2pa.json` | the C2PA bridge, opt-in per record | C2P-1…C2P-6 |
 | `swhid.json` | the SWHID bridge, opt-in per record | SWH-1…SWH-6 |
 | `spdx.json` | the SPDX bridge, opt-in per record | SPDX-1…SPDX-6 |
+| `prov.json` | the PROV bridge, opt-in per record | PROV-1…PROV-3 |
 | `exemptions.json` | rules no record can decide, with reasons | — |
 | `fixtures/` | real bytes for the digest rules | — |
 

@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.6.1"
+TOOL_VERSION = "0.7.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -134,6 +134,14 @@ SPDX_DOCUMENT_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:[^\s#]+$")
 # element identifier.
 SPDX_ELEMENT_PATTERN = re.compile(r"^SPDXRef-[A-Za-z0-9.-]+$")
 SPDX_RESERVED_ELEMENT = "SPDXRef-DOCUMENT"
+
+PROV_BRIDGE = "variorum:prov"
+PROV_MEMBERS = {"version"}
+# PROV is not versioned: the family was published once, on 30 April 2013, with
+# PROV-DM, PROV-O, PROV-N and PROV-CONSTRAINTS as Recommendations of that date
+# and PROV-XML and PROV-AQ as Notes. A date is the only stable identifier the
+# family offers, so the claim names one.
+PROV_VERSIONS = ("2013",)
 
 
 # STA-10: legal lifecycle transitions.
@@ -839,6 +847,45 @@ def validate_spdx_bridge(record: dict[str, Any], report: Report) -> None:
             )
 
 
+def validate_prov_bridge(record: dict[str, Any], report: Report) -> None:
+    """PROV-1..PROV-3 (spec/90-extensions/prov.md).
+
+    A projection, not a pointer: PROV gives a document no required identity
+    (PROV-CONSTRAINTS §1.2) and reserves no attribute that hashes bytes (§5.7.2),
+    so the claim carries one member — the edition the projection follows — and
+    nothing that could be copied or resolved. Only records carrying
+    ``extensions["variorum:prov"]`` are held to these rules; a record for an
+    artifact that appears in a PROV graph, without the claim, says nothing about
+    the graph (ADR-0014).
+    """
+    extensions = record.get("extensions")
+    if not isinstance(extensions, dict):
+        return
+    if PROV_BRIDGE not in extensions:
+        return
+    claim = extensions[PROV_BRIDGE]
+    if not isinstance(claim, dict):
+        report.add("PROV-1", "'variorum:prov' must be an object carrying 'version'")
+        return
+
+    unknown = sorted(set(claim) - PROV_MEMBERS)
+    if unknown:
+        report.add(
+            "PROV-3",
+            f"the PROV claim defines 'version' only; found {unknown}. PROV names no document and "
+            "hashes no bytes, so a 'document' or 'checksum' member would point at something no "
+            "reader can resolve (spec/90-extensions/prov.md 90.8)",
+        )
+
+    version = claim.get("version")
+    if version not in PROV_VERSIONS:
+        report.add(
+            "PROV-2",
+            "'version' must be '2013', the PROV family recommended on 30 April 2013: the family "
+            "was published once, so a date is the only edition there is",
+        )
+
+
 def validate_record(record: Any, artifact: Path | None = None) -> Report:
     """Run every applicable rule and collect the findings."""
     report = Report()
@@ -859,6 +906,7 @@ def validate_record(record: Any, artifact: Path | None = None) -> Report:
     validate_c2pa_bridge(record, report)
     validate_swhid_bridge(record, report)
     validate_spdx_bridge(record, report)
+    validate_prov_bridge(record, report)
     return report
 
 
@@ -942,7 +990,7 @@ def build_graph(records: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, str,
 # Conformance suite (spec/07-conformance.md)
 # --------------------------------------------------------------------------- #
 
-RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P", "SWH", "SPDX")
+RULE_FAMILIES = ("CORE", "ID", "SCH", "LIN", "REC", "STA", "ATT", "SEM", "C2P", "SWH", "SPDX", "PROV")
 RULE_PATTERN = re.compile(r"\b(" + "|".join(RULE_FAMILIES) + r")-[0-9]+\b")
 
 
@@ -1253,6 +1301,8 @@ def command_conform(arguments: argparse.Namespace) -> int:
 
 def load_record(path: Path) -> dict[str, Any]:
     """Read a record from disk, raising a readable error when it is not JSON."""
+    if not path.is_file():
+        raise SystemExit(f"{path}: not a file")
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:

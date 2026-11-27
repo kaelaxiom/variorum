@@ -23,6 +23,7 @@
 - [x] `spec/90-extensions/c2pa.md` — how a Variorum record and a C2PA manifest coexist
 - [x] `spec/90-extensions/swhid.md` — mapping to SWHID for source code
 - [x] `spec/90-extensions/spdx.md` — SBOM/ML-BOM cross-reference
+- [x] `spec/90-extensions/prov.md` — W3C PROV projection bridge, written after Phase 2 closed as the last unwritten bridge (ADR-0014)
 
 ## Phase 3 — Adoption
 

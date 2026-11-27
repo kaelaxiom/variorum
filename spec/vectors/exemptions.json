@@ -38,6 +38,9 @@
     "SWH-7": "A consumer obligation that needs the artifact's bytes: the record validator never sees them, so it cannot recompute a content's SWHID or detect a claim that disagrees with the file.",
     "SWH-8": "A consumer obligation about what an identifier covers: no record can demonstrate that a reader refrained from treating a tree, commit, tag or snapshot identifier as the artifact's bytes.",
     "SPDX-7": "A consumer obligation that needs three things the record does not carry: the artifact's bytes, the SPDX document the claim names, and a resolver for both. The comparison of a file element's SHA256 checksum with the digest happens outside any record.",
-    "SPDX-8": "A consumer obligation about the conclusions a bill of materials licenses: that a verification code covers a set rather than a file, and that a claim without 'element' names nothing, are both facts about what a reader may infer, not properties of a record."
+    "SPDX-8": "A consumer obligation about the conclusions a bill of materials licenses: that a verification code covers a set rather than a file, and that a claim without 'element' names nothing, are both facts about what a reader may infer, not properties of a record.",
+    "PROV-4": "A consumer obligation about what a PROV graph holds: no record decides whether a reader treated prov:value or any other attribute as artifact.digest, and the only check for a digest is a recomputation from the bytes.",
+    "PROV-5": "A consumer obligation that needs a graph the record does not carry: whether a derivation names one of the eight relations in prov:type, and whether a reader refused to read specializationOf or alternateOf as lineage, are conclusions about a foreign document.",
+    "PROV-6": "A consumer obligation about lifecycle and responsibility: no record can show that a reader kept an invalidation apart from a rejected state, or an unsigned attribution apart from a signature, because both judgements happen outside the record."
   }
 }
