@@ -1,6 +1,26 @@
 # HANDOFF
 
-## Last session — 2026-11-25 (Phase 3: the second case study, in `3d-printerator`)
+## Last session — 2026-11-26 (Phase 3: the third case study, in `echo-language`)
+
+**Did:** closed Phase 3's case studies. The previous run had written `docs/case-studies/echo-language.md` and left it uncommitted; this session checked every claim in it against the files, corrected two, and shipped it.
+
+- **The case study is real, and every number was re-derived.** Four Suno takes of *Liora* (`Liora-take-01..04.mp3`), SHA-256 and size recomputed from the bytes (3,650,777 / 3,548,907 / 4,286,810 / 4,097,358 B), `ffprobe` durations (158.280 / 152.880 / 186.648 / 178.128 s), the quoted JSON block parses to exactly the committed take-04 record, and the adopter's `check` returns `0` on all four records and `1` on a mismatched take. The C2PA hard binding recomputes for every take (`709d7fe7…` for take 04, over the file minus the 13,659-byte exclusion starting at byte 18,915) while the Variorum digest is `ba774da9…` — `C2P-6` measured, not argued.
+- **Two statements corrected.** The sentence about *three takes of one prompt being siblings* is the paragraph under `LIN-6`, not `LIN-6` itself, and the case study now says so. The claim that the prompt block and the `USLT` frame are equal "667 characters both ways" holds for takes 02–04; take 01's frame is 709 characters because the provider repeats the final `[Outro]` section, so the text now says the tag is a transcription that can drift, not a copy of the prompt.
+- **Two defects in the adopter's stamper, found by reading its output.** `frame_language_text` returned the USLT content descriptor instead of the text — every UTF-8 frame (Suno writes encoding 3 with an empty descriptor) decoded as `""` — and `reject_derived` exited 1 where the module docstring, the tool README and the adopter's `docs/variorum.md` all promised exit 2. Both fixed in `echo-language` commit `2232272`, with `tests/test_variorum_record.py` (13 tests: four encodings, empty and non-empty descriptors, no terminator, truncated payload, three refusal paths, two end-to-end `check` runs that skip when the audio is absent). That repository's suite went from 78 to 91 tests, all green.
+- **One documentation defect across all three case studies.** Each "What a consumer can check" block showed `python3 tools/variorum.py …` with paths relative to the adopter's repository, as if both trees were one directory. The comment now says the reference command runs in a checkout of this repository.
+- **On this side:** the case study, its row in `docs/case-studies/README.md`, the PLAN box, CHANGELOG, STATE and this file.
+
+**Verified:** 120 unit tests OK; `conform --coverage` 188/188 PASS (96/133 referenced, 37 exempt, 0 uncovered); seven examples validate; `echo-language` `2232272` pushed and clean; `software-tools` (`e0a739f`) and `3d-printerator` (`faa987c`) unchanged, pushed and clean.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Phase 3's case studies are complete; the site is what remains**, and it cannot start without a domain. Owner decision.
+- **Three normative questions the case studies produced**, each needing an ADR before 0.2: `REC-12` has no value for a build that fixes every vertex and no byte (from `3d-printerator`); `REC-9` assumes one prompt field where Suno's Custom mode has six (from `echo-language`, which puts the lyric field in `recipe.prompt` and the rest in `parameters`); and the lifecycle vocabulary has no `generated` state — a take that was produced but never judged fits neither `draft` nor `candidate`, and `STA-15` makes silence legal but says nothing about a generator recording its own output.
+- Consistency item (open since the C2PA bridge): `C2P-1`, `SWH-1` and `SPDX-1` reject an explicit JSON `null` claim; `SEM-1` treats `null` as absent and returns early. Aligning SEM is a behaviour change to a shipped bridge — needs its own vector and a CHANGELOG line.
+- `conform --verbose` still has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` still holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays a separate planned bridge; `spec/90-extensions/prov.md` is still unwritten.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-25 (Phase 3: the second case study, in `3d-printerator`)
 
 **Did:** shipped the case study the previous run had written but not committed, then adopted the format in a second real repository — one that builds what it records.
 

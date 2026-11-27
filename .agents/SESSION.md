@@ -342,3 +342,37 @@ Close the case study the previous run left uncommitted, then adopt the format in
 - `CLAUDE.md` in `3d-printerator` was not edited (approval-protected, no approver in this run); the tool is documented in `docs/variorum.md` and the README.
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - The older consistency items unchanged: SEM `null`, `conform --verbose`, one `semver.tag`, `SPDX-7`, CycloneDX, PROV.
+
+# SESSION — 2026-11-26 (Phase 3: the third case study, in `echo-language`)
+
+## Objective
+
+Ship the case study the previous run wrote but did not commit, after checking it against the files it describes, and close Phase 3's case studies.
+
+## Done
+
+- **Re-derived every number in `docs/case-studies/echo-language.md`.** SHA-256 and size of the four takes recomputed (3,650,777 / 3,548,907 / 4,286,810 / 4,097,358 B); durations read with `ffprobe` (158.280 / 152.880 / 186.648 / 178.128 s); the JSON block in the document parsed and compared member for member with the committed take-04 record (equal); the adopter's `check` run on all four records (`0`) and against a mismatched take (`1`, both digests printed); the C2PA hard binding recomputed for every take — SHA-256 over the file minus the 13,659-byte exclusion starting at byte 18,915 — reproducing `709d7fe7…` for take 04 against a Variorum digest of `ba774da9…`.
+- **Corrected two statements the previous run left imprecise.** The "three takes are `revision` siblings" sentence belongs to the paragraph under `LIN-6`, not to `LIN-6`; and the prompt/`USLT` equality holds at 667 characters for takes 02–04 only — take 01's frame is 709 because the provider repeats the final `[Outro]` section. The case study now says the tag is a transcription that can drift, and the adopter's own `docs/variorum.md` carries the same correction.
+- **Fixed two defects in the adopter's stamper** (`tools/variorum-record/main.py` in `echo-language`): `frame_language_text` returned the frame's content descriptor instead of its text, so every UTF-8 `USLT` decoded as `""`; `reject_derived` exited 1 where three documents promised 2. Added `tests/test_variorum_record.py` (13 tests). Adopter's suite 78 → 91, all green. Commit `2232272`, pushed.
+- **Fixed a documentation defect in all three case studies:** "What a consumer can check" ran `python3 tools/variorum.py` with the adopter's paths, as if the two repositories were one directory; the comment now says the reference command runs in a checkout of this repository.
+- **On this side:** the case study file, its row in `docs/case-studies/README.md`, the PLAN box, a CHANGELOG `Added` entry and a `Changed` entry, STATE and HANDOFF.
+
+## Numbers
+
+- 120 unit tests OK.
+- `conform --coverage`: 188/188 PASS; 96/133 rules referenced, 37 exempt, 0 uncovered.
+- Seven example records validate.
+- `echo-language` commit `2232272` (4 files, 209 insertions); `software-tools` `e0a739f` and `3d-printerator` `faa987c` unchanged and clean.
+
+## Decisions
+
+- **The case study quotes the record, it does not paraphrase it.** Comparing the parsed JSON block with the committed file member by member is what caught nothing this time — and is the only reason to trust that it will next time.
+- **A provider's tag is evidence, not a checksum.** Take 01 proves the distinction: the lyrics Suno wrote back repeat the outro, so the tag can drift from the prompt while the prompt is what was sung.
+- **A defect found while documenting an adopter is fixed in the adopter's repository, not worked around in the case study.** The exit-code mismatch and the empty lyrics were both real; recording them as quirks would have left a tool that lies to its own documentation.
+
+## Open
+
+- Phase 3's remaining work is the site, which needs a domain (owner).
+- Three normative questions for 0.2, each needing an ADR: `REC-12`'s missing determinism value, `REC-9`'s single prompt field, and a `generated` state.
+- Owner review, transfer to `cazucito`, `u-onoma`/`_index` registration.
+- The older consistency items unchanged: SEM `null`, `conform --verbose`, one `semver.tag`, `SPDX-7`, CycloneDX, PROV.

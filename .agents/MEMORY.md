@@ -110,3 +110,15 @@ The previous run listed three broken shapes in the README. Two were real; the th
 `docs/adoption.md` and `examples/instruisto-release-copilot/` sat in the tree from the previous run with plausible digests. Re-downloading both release assets and recomputing their SHA-256 cost two minutes and turned "the guide says so" into "the bytes say so"; the digests happened to match, which is exactly why the habit is cheap and the alternative is not.
 
 **Lesson:** before committing an example produced by an earlier run, re-derive its identity from the source. The expensive failure is not a wrong digest that gets caught — it is a wrong digest that gets published.
+
+## 2026-11-26 — A tag the provider writes back is evidence, not a copy
+
+The lyric block in the project's prompt file and the `USLT` frame Suno writes into the MP3 agree character for character in three of four takes, and the fourth carries the final `[Outro]` section twice. "The prompt is checkable against the artifact" was true enough to write and wrong as stated for one file in four.
+
+**Lesson:** when a document compares a generator's output tag with the input that produced it, measure every artifact before claiming equality for a batch. State the comparison as evidence that can drift, not as a checksum that must match.
+
+## 2026-11-26 — A command block is read from the directory it names
+
+All three case studies ran `python3 tools/variorum.py` over paths relative to the adopter's repository — a directory that does not contain that tool. The block is correct only for a reader who happens to be standing in a second checkout, which is the one thing the prose never said.
+
+**Lesson:** every shell block in a document must state the directory it assumes. When two repositories meet in one command, say which side the tool comes from; the paths already say which side the data is on.

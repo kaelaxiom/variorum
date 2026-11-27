@@ -30,7 +30,7 @@
 - [ ] Adopt in three real repositories as case studies
   - [x] [`software-tools`](../docs/case-studies/software-tools.md) — an archive that publishes artifacts it did not produce; one artifact, `core`, emitted by the project's own tool
   - [x] [`3d-printerator`](../docs/case-studies/3d-printerator.md) — a CAD repository that builds what it records; one artifact with `recipe`, `lineage` and a `state` that ends in `rejected`
-  - [ ] Third case study
+  - [x] [`echo-language`](../docs/case-studies/echo-language.md) — a content project whose artifacts come from a model; four takes with a generative `recipe` (`determinism: "none"`), a `lineage` edge to the lyric source and the `c2pa` bridge pointing at the provider's embedded manifest
 - [ ] Public site (domain not yet decided)
 - [ ] Announce
 

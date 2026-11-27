@@ -139,7 +139,7 @@ python3 tools/variorum_record.py check \
   --source   designs/aw9-d2strap-case/v2/aw9-d2strap-case-v2.scad
 # OK    …: digest and size of the artifact, digest of the source
 
-# the format, with the reference implementation
+# the format, with the reference implementation (run in a checkout of this repository)
 python3 tools/variorum.py validate \
   designs/aw9-d2strap-case/v2/cf3a7707ccdb.variorum.json \
   --artifact designs/aw9-d2strap-case/v2/aw9-d2strap-case-v2-holder.stl

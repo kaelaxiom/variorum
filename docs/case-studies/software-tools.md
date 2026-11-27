@@ -84,7 +84,7 @@ The other ninety rows stay unrecorded until each one is fetched back and hashed 
 ## What a consumer can check
 
 ```bash
-# the format, with the reference implementation
+# the format, with the reference implementation (run in a checkout of this repository)
 python3 tools/variorum.py validate ops/records/fc0cadf23dc1.variorum.json --artifact Gel86a.zip
 # OK — record conforms to Variorum 0.1 (core)
 
