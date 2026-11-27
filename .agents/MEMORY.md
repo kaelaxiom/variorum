@@ -128,3 +128,9 @@ All three case studies ran `python3 tools/variorum.py` over paths relative to th
 `ProvBridgeTests` failed because its helper put a record's sections inside the bridge's claim object, and `PROV-3` rejects exactly that. The vector exercising the same rule (`prov/claim-survives-a-full-projection`) had the correct shape and passed. The test was the defect; the rule was doing its job.
 
 **Lesson:** when a unit test and a vector disagree about one rule, read both before editing either. The vector is the conformance contract; the test is a convenience built around it. Editing the validator to satisfy a badly built fixture turns a correct rule into a wrong one, and the suite would still be green.
+
+## 2026-11-27 — `dict.get()` erases the difference between missing and null
+
+`validate_semver_bridge` read `claim = extensions.get("variorum:semver")` and returned early on `None`, so a record carrying `"variorum:semver": null` skipped every SemVer rule — while `SEM-1` says "When present, its value MUST be an object" and the schema had always typed it as one. The four later bridges used `if KEY not in extensions` and were right for a reason nobody had written down.
+
+**Lesson:** when a rule's trigger is presence, test membership, not a defaulted lookup. `.get()` returns `None` both for "the author never wrote the key" and for "the author wrote the key empty", and those are different claims; only one of them is silence.

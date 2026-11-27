@@ -334,7 +334,11 @@ class SemverBridgeTests(unittest.TestCase):
         self.assertTrue(report.ok, f"the record should have been accepted: {report.errors}")
 
     def test_claim_must_be_an_object(self) -> None:
-        self.assert_rejected(record_with(extensions={"variorum:semver": "1.4.2"}), "SEM-1")
+        # An explicit JSON null is a present claim, not an absent one: SEM-1
+        # says "when present" and every other bridge already refuses it.
+        for claim in ("1.4.2", None, [], ["1.4.2"], True):
+            with self.subTest(claim=claim):
+                self.assert_rejected(record_with(extensions={"variorum:semver": claim}), "SEM-1")
 
     def test_claim_requires_the_semver_scheme(self) -> None:
         record = record_with(scheme={"name": "custom", "version": "1.4.2"}, extensions={"variorum:semver": {}})

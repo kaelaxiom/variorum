@@ -1,6 +1,24 @@
 # HANDOFF
 
-## Last session — 2026-11-27 (the PROV bridge, closed)
+## Last session — 2026-11-27 (afternoon: PROV pushed, and the null that was not a claim)
+
+**Did:** committed and pushed the PROV bridge the previous run left in the tree, then closed the consistency item that had been open since the C2PA bridge.
+
+- **The PROV commit is `25bac33`.** The work was already green when this session started (128 tests, 200/200, seven examples); re-running the suite and reading the diff confirmed it before committing. The commit carries `spec/90-extensions/prov.md`, `spec/vectors/prov.json` (12 vectors), ADR-0014, the schema claim, tool 0.7.0, `prov` in `RULE_FAMILIES`, the `load_record` fix for a path that is not a file, and every document the bridge touches. Pushed to `main`; HEAD equals remote.
+- **`SEM-1` treated an explicit JSON `null` claim as no claim.** `validate_semver_bridge` fetched the extension with `extensions.get(SEMVER_BRIDGE)` and returned early on `None` — the same value a missing key returns — so a record carrying `"variorum:semver": null` skipped every SemVer rule, while `C2P-1`, `SWH-1`, `SPDX-1` and `PROV-1` all test key membership and reject `null`. The rule already said "When present, its value MUST be an object" and the schema already typed the claim as an object; only the implementation disagreed. It now checks membership before reading, so all five bridges behave alike.
+- **`semver/claim-must-not-be-null`** is the vector (a reject, `SEM-1`), and `SemverBridgeTests.test_claim_must_be_an_object` now covers five non-object claims — string, `null`, empty array, one-element array, boolean — in subTests. The suite grows to 201 vectors; the test count stays 128 because the existing method was extended, not duplicated.
+
+**Verified:** 128 unit tests OK; `conform --coverage` 201/201 PASS (99/139 referenced, 40 exempt, 0 uncovered); all seven examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Phase 3's case studies are complete; the site is what remains**, and it cannot start without a domain. Owner decision.
+- **Three normative questions the case studies produced**, each needing an ADR before 0.2: `REC-12` has no value for a build that fixes every vertex and no byte (from `3d-printerator`); `REC-9` assumes one prompt field where Suno's Custom mode has six (from `echo-language`, which puts the lyric field in `recipe.prompt` and the rest in `parameters`); and the lifecycle vocabulary has no `generated` state — a take that was produced but never judged fits neither `draft` nor `candidate`, and `STA-15` makes silence legal but says nothing about a generator recording its own output.
+- ~~Consistency item: SEM `null` vs the other four bridges.~~ **Closed this session**: the tool now rejects a present non-object claim in all five bridges (`semver/claim-must-not-be-null`).
+- `conform --verbose` still has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` still holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays the one planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-27 (morning: the PROV bridge, closed)
 
 **Did:** closed the PROV bridge the previous run left written, uncommitted and red — one failing unit test, no documentation or changelog, nothing pushed.
 

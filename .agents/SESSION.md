@@ -407,3 +407,34 @@ Finish the bridge the previous run left written, uncommitted and red — and dec
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - Three normative questions for 0.2: `REC-12`'s determinism value, `REC-9`'s single prompt field, a `generated` state.
 - The older consistency items: SEM `null`, `conform --verbose`, one `semver.tag`, `SPDX-7`, CycloneDX.
+
+# SESSION — 2026-11-27 (afternoon): the PROV commit, and a null that was not a claim
+
+## Objective
+
+Commit and push the PROV bridge the previous run left in the tree, then close one open consistency item without inventing normative changes.
+
+## Done
+
+- **Committed and pushed the PROV bridge as `25bac33`.** Re-ran the suite and read the full diff before committing: 128 tests, 200/200 vectors, seven examples, schema claim closed, tool 0.7.0, `PROV` in `RULE_FAMILIES`, all docs updated. Nothing needed repair; the previous run's stop was purely the iteration limit. Pushed to `main`, HEAD equals remote.
+- **Fixed the SemVer bridge's handling of an explicit `null` claim.** `validate_semver_bridge` read `extensions.get(...)` and returned on `None`, so a record carrying `"variorum:semver": null` skipped `SEM-1`..`SEM-5` and validated; the four bridges written later all test key membership and reject `null`. Changed to `if SEMVER_BRIDGE not in extensions: return`, then read the value. This is the implementation matching existing text, not a rule change: `SEM-1` says "When present, its value MUST be an object" and the schema types all five claims as objects.
+- **Added `semver/claim-must-not-be-null`** to `spec/vectors/semver.json` (reject, `SEM-1`) and widened `SemverBridgeTests.test_claim_must_be_an_object` to five non-object values in subTests. Suite 200 → 201 vectors; tests stay 128.
+- **Documentation:** CHANGELOG `Fixed` entry, README vector count, STATE counts, HANDOFF and this file. The four older HANDOFF sections keep their "SEM null" open item because they record what those sessions left open; the new section closes it.
+
+## Numbers
+
+- 128 unit tests OK.
+- `conform --coverage`: 201/201 PASS; 99/139 rules referenced, 40 exempt, 0 uncovered.
+- Seven example records validate.
+- `25bac33` pushed; tree clean at the end of the PROV work before this commit.
+
+## Decisions
+
+- **A consistency defect in one bridge is not grounds for a normative change in the other four.** The tempting "fix" was to make the other bridges tolerate `null` the way SEM did; the text and the schema both said the opposite, so the one implementation that disagreed was the defect.
+- **Extend the existing test rather than add a near-duplicate.** `test_claim_must_be_an_object` is exactly the rule under repair; a second test method would assert the same predicate for one more value.
+
+## Open
+
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- Three normative questions for 0.2: `REC-12`'s determinism value, `REC-9`'s single prompt field, a `generated` state.
+- Remaining consistency items: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX still planned.

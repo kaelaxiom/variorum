@@ -570,9 +570,9 @@ def validate_semver_bridge(record: dict[str, Any], report: Report) -> None:
     extensions = record.get("extensions")
     if not isinstance(extensions, dict):
         return
-    claim = extensions.get(SEMVER_BRIDGE)
-    if claim is None:
+    if SEMVER_BRIDGE not in extensions:
         return
+    claim = extensions[SEMVER_BRIDGE]
     if not isinstance(claim, dict):
         report.add("SEM-1", "'variorum:semver' must be an object")
         return

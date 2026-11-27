@@ -20,7 +20,7 @@
 - [x] `spec/90-extensions/swhid.md` — the SWHID 1.2 bridge (`SWH-1`…`SWH-8`), a sibling identifier, opt-in per record
 - [x] `spec/90-extensions/spdx.md` — the SPDX 2.3 bridge (`SPDX-1`…`SPDX-8`), a pointer to the bill of materials, opt-in per record
 - [x] `spec/90-extensions/prov.md` — the W3C PROV bridge (`PROV-1`…`PROV-6`), a member-by-member projection rather than a pointer, opt-in per record
-- [x] `spec/vectors/` — 200 vectors in thirteen groups, real fixtures, `exemptions.json` with reasons
+- [x] `spec/vectors/` — 201 vectors in thirteen groups, real fixtures, `exemptions.json` with reasons
 - [x] `schema/variorum.schema.json` — JSON Schema 2020-12, including the `variorum:semver`, `variorum:c2pa`, `variorum:swhid`, `variorum:spdx` and `variorum:prov` claim shapes
 - [x] `tools/variorum.py` — reference CLI 0.7.0 (validator, `conform` runner, five bridge checks, `show` renders tool chains, stdlib only)
 - [x] `docs/adoption.md` — the core-only adoption path, performed on `instruisto`'s release `github-copilot-agents/v1.1.0` rather than summarised afterwards; §12 covers adopting an artifact you did not produce
@@ -33,7 +33,7 @@
 ## Verified on the last session
 
 - `python3 -m unittest discover -s tests` → 128 tests OK.
-- `python3 tools/variorum.py conform --coverage` → 200/200 PASS; 99/139 rules referenced, 40 exempt, 0 uncovered.
+- `python3 tools/variorum.py conform --coverage` → 201/201 PASS; 99/139 rules referenced, 40 exempt, 0 uncovered.
 - All seven records under `examples/*/*.variorum.json` validate.
 - Every PROV citation in `spec/90-extensions/prov.md` was opened and checked against PROV-DM (entity, activity, agent, revision, quotation, primary source, attribute table, `prov:value` and Example 53, qualified names, extensibility §6), PROV-O (`generatedAtTime`, `invalidatedAtTime`, `no longer usable`) and PROV-CONSTRAINTS (§1.2 anonymous toplevel instance and "instances need not be valid", §2.4 cycle with a strictly-precedes edge, §7.2 distinct bundle names). One quotation inherited from the draft was wrong and is fixed: §5.5.2 says alternates "present aspects of the same thing".
 

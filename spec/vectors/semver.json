@@ -32,6 +32,15 @@
       "expect": { "valid": false, "rules": ["SEM-1"] }
     },
     {
+      "name": "semver/claim-must-not-be-null",
+      "class": "core",
+      "bridge": "variorum:semver",
+      "description": "JSON null is not an object and not an absent member: a record that writes the key with no claim is rejected, exactly as the other four bridges reject it and as the schema types it.",
+      "rules": ["SEM-1"],
+      "patch": { "extensions": { "variorum:semver": null } },
+      "expect": { "valid": false, "rules": ["SEM-1"] }
+    },
+    {
       "name": "semver/claim-requires-the-scheme",
       "class": "core",
       "bridge": "variorum:semver",
