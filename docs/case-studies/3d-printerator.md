@@ -151,7 +151,7 @@ Both were run before the commit, and `check` was also run against a different ST
 ## What adoption did not include
 
 - **`attestation`.** No keys, no signature. The record is public and verifiable, not signed — and the state section says who decided what, which is a claim a signature would strengthen.
-- **Records for the other six files.** The two fit-test STLs exist to validate a fit that was never tested; their lifecycle has no transitions, and an empty `state` would force `"draft"` (`STA-7`) onto files that already served their purpose. v1 was replaced by v2, but `superseded` is reachable only from `approved` or `published` (§5.4) and nothing documents that v1 was ever approved. Silence was the honest answer in both cases.
+- **Records for the other six files.** The two fit-test STLs exist to validate a fit that was never tested; their lifecycle has no transitions, and an empty `state` could only claim a premise — `draft` or `candidate` (`STA-7`) — neither of which is true of files that already served their purpose. v1 was replaced by v2, but `superseded` is reachable only from `approved` or `published` (§5.4) and nothing documents that v1 was ever approved. Silence was the honest answer in both cases.
 - **Serving the record next to a download.** This repository publishes nothing over HTTP; the record travels in the same commit as the artifact, which is as close as a sidecar gets.
 
 ## What it cost

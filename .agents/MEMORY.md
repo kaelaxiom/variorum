@@ -146,3 +146,15 @@ All three case studies ran `python3 tools/variorum.py` over paths relative to th
 `schema/variorum.schema.json` enumerated `determinism` while `REC-12` said SHOULD. The reference tool warned; a standard JSON Schema validator rejected the same record. `CON-8` already said which behaviour was right, and nothing had ever loaded the schema to notice.
 
 **Lesson:** a machine-readable contract that expresses a recommendation as an `enum` silently promotes it to a rule. Either the schema documents the vocabulary without asserting it, or the specification promotes the rule to a MUST — the middle is two implementations that disagree about a record neither of them has seen. And if the schema is part of the contract, a test must read it: a file no test loads drifts at the speed of its own edits.
+
+## 2026-11-28 — A premise is not a decision
+
+`STA-7` and `STA-9` made `draft` the only entry into a lifecycle: an empty transition list had to say `draft`, and the first transition had to start there. For a take a model returns complete, both routes were false — `draft` called finished work "in progress", and `candidate` could only be reached through a `draft → candidate` transition with an actor and a timestamp nobody made. The adopter chose silence, which was honest and gave up the section entirely.
+
+**Lesson:** when a state machine has a single initial value, check whether it asserts the *absence of a decision* or a *fact about the work*. The first is a premise and needs no attestation; the second does, and forcing it into the initial slot makes every producer invent evidence. When the missing word names a production method (`generated`), the likely answer is not a new state but the section that already describes production (`recipe`, `producer`): a state named for how the bytes were made duplicates a fact in the one place whose subject is decisions.
+
+## 2026-11-28 — A fixture that breaks two rules tests neither
+
+`test_first_transition_must_start_at_draft` exercised `STA-9` with a `candidate → candidate` transition. `STA-10` rejects that edge on its own, so the test would have stayed green after the first-transition rule changed; it was asserting a coincidence. It now uses `approved → published`, an edge §5.4 allows, so only `STA-9` can fail it.
+
+**Lesson:** a reject fixture must violate exactly the rule under test. When it breaks two, the test cannot say which one the implementation still enforces, and relaxing one leaves it green for the other — the same class of green as a vector that passes for the wrong reason.

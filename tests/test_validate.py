@@ -276,13 +276,36 @@ class ValidationTests(unittest.TestCase):
 
     # State -------------------------------------------------------------- #
 
-    def test_first_transition_must_start_at_draft(self) -> None:
+    def test_first_transition_must_start_at_a_premise(self) -> None:
+        """STA-9: a history that begins after a decision has lost its beginning."""
         self.assert_rejected(
-            record_with(state={"current": "candidate", "transitions": [
-                {"from": "candidate", "to": "candidate", "actor": {"name": "a"}, "at": "2026-11-22T12:00:00-06:00"}
+            record_with(state={"current": "published", "transitions": [
+                {"from": "approved", "to": "published", "actor": {"name": "a"}, "at": "2026-11-22T12:00:00-06:00"}
             ]}),
             "STA-9",
         )
+
+    def test_either_premise_may_be_held_with_no_transitions(self) -> None:
+        """STA-7: draft says 'may still change', candidate says 'complete, nothing decided' (ADR-0017)."""
+        for premise in ("draft", "candidate"):
+            with self.subTest(premise=premise):
+                report = variorum.validate_record(record_with(state={"current": premise, "transitions": []}))
+                self.assertTrue(report.ok, report.errors)
+
+    def test_empty_transitions_cannot_claim_a_decision(self) -> None:
+        self.assert_rejected(record_with(state={"current": "approved", "transitions": []}), "STA-7")
+
+    def test_a_candidate_can_be_rejected_without_a_draft_step(self) -> None:
+        report = variorum.validate_record(record_with(state={"current": "rejected", "transitions": [
+            {"from": "candidate", "to": "rejected", "actor": {"name": "cazucito"}, "at": "2026-11-22T12:00:00-06:00"}
+        ]}))
+        self.assertTrue(report.ok, report.errors)
+
+    def test_a_candidate_can_be_archived_without_a_judgement(self) -> None:
+        report = variorum.validate_record(record_with(state={"current": "archived", "transitions": [
+            {"from": "candidate", "to": "archived", "actor": {"name": "cazucito"}, "at": "2026-11-22T12:00:00-06:00"}
+        ]}))
+        self.assertTrue(report.ok, report.errors)
 
     def test_illegal_contiguous_transition(self) -> None:
         self.assert_rejected(

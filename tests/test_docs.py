@@ -15,11 +15,15 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import unittest
 from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+
+import variorum  # noqa: E402
 
 FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 INLINE_CODE = re.compile(r"`[^`\n]*`")
@@ -108,6 +112,29 @@ class CaseStudyIndexTests(unittest.TestCase):
         }
         self.assertEqual(set(), files - listed, "case studies missing from the index")
         self.assertTrue(files, "no case studies found; Phase 3 has at least one")
+
+
+class StateVocabularyTests(unittest.TestCase):
+    """The seven states are defined once, in prose, and rendered twice in code.
+
+    `tests/test_schema.py` compares the schema with the tool. Nothing compared
+    either with `spec/05-state.md`, where the table *defines* the vocabulary —
+    so the spec could gain or lose a value and both machine renderings would
+    keep agreeing with each other. This closes the third side of the triangle.
+    """
+
+    TABLE_ROW = re.compile(r"^\| `([a-z]+)` \|", re.MULTILINE)
+
+    def test_the_state_table_matches_the_reference_tool(self) -> None:
+        text = (ROOT / "spec" / "05-state.md").read_text(encoding="utf-8")
+        section = text.split("## 5.2 States", 1)[1].split("## 5.3", 1)[0]
+        table = self.TABLE_ROW.findall(section)
+        self.assertEqual(len(table), len(set(table)), "a state appears twice in §5.2")
+        self.assertEqual(
+            sorted(variorum.STATES),
+            sorted(table),
+            "spec/05-state.md §5.2 and tools/variorum.py define different state vocabularies",
+        )
 
 
 if __name__ == "__main__":

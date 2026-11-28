@@ -1,5 +1,39 @@
 # HANDOFF
 
+## Last session — 2026-11-28 (the lifecycle question, answered without a new state)
+
+**Did:** closed the last normative question the Phase 3 case studies produced. It did not need a `generated` state; it needed `candidate` to be reachable without a fabricated transition.
+
+- **The defect.** `STA-7` and `STA-9` made `draft` the only way into a lifecycle: with no transitions, `current` MUST be `draft`, and the first transition MUST start at `draft`. §5.2 defines `draft` as "In progress; not yet proposed for review". A take a model produces arrives complete, so the vocabulary offered it two falsehoods — `draft` (in progress) or `candidate` reached through a `draft → candidate` transition with an `actor` and an `at` that nobody made — and `echo-language` chose silence instead (`STA-15`), giving up the one thing the section exists to record.
+- **The answer, and why it is not a new state.** `draft` and `candidate` are the only two states that assert no decision: "may still change" and "complete, nothing decided". They are now the two **premises** a record may hold with an empty transition list, and the first transition may start at either. A generated batch is born a `candidate`, and the human's choice is the first transition, landing directly on `candidate → approved` or `candidate → rejected`. A `generated` state was refused as a category error: that a model made the bytes is `producer.kind` and `recipe.kind` (with tool, model, prompt and determinism), and `state` records decisions, not provenance (ADR-0017, four options recorded, including the rejected redefinition of `draft` as "undecided").
+- **One edge added.** `candidate → archived` (§5.4). Shelving a batch nobody judged is a decision about activity, not a judgement of the work; without the edge the record would have to record a rework it never did.
+- **`STA-7` and `STA-9` were extended, not duplicated.** The five decision states — `approved`, `published`, `superseded`, `rejected`, `archived` — remain unreachable without an actor and a timestamp, and `"current": "approved"` with no transitions is still invalid. The change is a relaxation: every record valid under 0.1 remains valid, and the shipped `la-enpenso-shot-01` records keep their `draft → candidate` transition, which now says something more specific.
+- **Schema:** a `description` on the `state` object naming the two premises; no `enum`, `const` or conditional. `STA-7`/`STA-9` compare `current` with the transition list and were never expressible in JSON Schema. Tool 0.10.0 (`INITIAL_STATES`; `LEGAL_TRANSITIONS`).
+- **Vectors:** the two that encoded the old clause were replaced, not deleted — `state/empty-transitions-mean-draft` ("the only honest current state is draft") became a reject for `approved` with no transitions, and `state/first-transition-starts-at-draft` a reject for a first transition from `approved`. Three accepts pin the new shapes: born a `candidate`, rejected without a draft step, archived without a judgement. Suite 208 → 211.
+- **A test that was already wrong.** `test_first_transition_must_start_at_draft` exercised `STA-9` with a `candidate → candidate` transition — rejected by `STA-10` on its own — so it would have stayed green for the wrong reason once the first-transition rule changed. Replaced by `test_first_transition_must_start_at_a_premise`, plus four tests for the premises and the new edges.
+- **A third rendering now has a test.** `tests/test_docs.py::StateVocabularyTests` parses §5.2's table and compares it with `variorum.STATES`; `tests/test_schema.py` already compared the schema with the tool, so the spec's vocabulary, the schema's `enum` and the tool's set cannot drift apart.
+- **The three case studies that reasoned from the old clause were brought forward:** `echo-language` (which omitted `state` and can now carry `candidate` with no transitions), `software-tools` and `3d-printerator` (which cited `STA-7` as forcing `draft`; it offers two premises, and neither is true of a file that already served its purpose).
+
+**Verified:** 148 unit tests OK; `conform --coverage` 211/211 PASS (102/142 referenced, 40 exempt, 0 uncovered); all seven examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Phase 3's case studies and normative questions are complete; the site is what remains**, and it cannot start without a domain. Owner decision.
+- The documented deferrals, unchanged: `conform --verbose` has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays the one planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-28 (early: `recipe.promptField`, committed without the state files)
+
+**Did:** closed the second normative question the case studies produced — `REC-9` assumed a generator with one prompt field where Suno's Custom mode has six. Committed as `363cfba`; the tree was clean and HEAD equalled the remote when the lifecycle session began.
+
+- `REC-9` now says `recipe.prompt` holds the verbatim value of **one** field, never a concatenation; `REC-23` (SHOULD) names it in `recipe.promptField` using the provider's vocabulary; `REC-24` (MUST) fixes the member's shape and forbids it without `prompt`. ADR-0016 records the four options.
+- Schema types `promptField` and binds it with `dependentRequired`; tool 0.9.0 checks both clauses for a recipe and for every hybrid stage; four vectors and four tests.
+- **This session did not update `STATE.md`, `HANDOFF.md` or `SESSION.md` before it ended.** The lifecycle session re-ran the whole suite as its first act (143 tests, 208/208, seven examples) and backfilled the three files with these numbers.
+
+**Verified at the start of the next session:** 143 unit tests OK; `conform --coverage` 208/208 PASS (102/142 referenced, 40 exempt, 0 uncovered); seven examples validate.
+
+**Left open:** the lifecycle question (closed later the same day by ADR-0017); owner review and transfer; the site's domain; the documented deferrals.
+
 ## Last session — 2026-11-27 (evening: determinism, and a SHOULD the schema called a MUST)
 
 **Did:** closed the determinism gap the `3d-printerator` case study had left open, and fixed the schema defect that reading the member exposed.

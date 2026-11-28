@@ -154,6 +154,7 @@
     },
     "state": {
       "type": "object",
+      "description": "The lifecycle the record declares. With no transitions, `current` states a premise: `draft` (the artifact may still change) or `candidate` (complete, and nothing has been decided about it). Every other state asserts a decision and requires a transition with an actor and a timestamp (STA-7, STA-9, ADR-0017).",
       "required": ["current", "transitions"],
       "properties": {
         "current": {

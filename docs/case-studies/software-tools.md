@@ -99,7 +99,7 @@ Nothing here needs the network, the site's password or the archive's database. T
 
 ## What adoption did not include
 
-- **`state`.** The archive has no dated record of when each file was registered, approved or published. `STA-7` would have forced `current: "draft"` on an empty transition list, which would have been a lie about a file that has been served for years; the honest answer was to omit the member.
+- **`state`.** The archive has no dated record of when each file was registered, approved or published. `STA-7` allows only the two premises — `draft` or `candidate` — on an empty transition list, and neither is true of a file that has been served for years; the honest answer was to omit the member (`STA-15`).
 - **`recipe`.** The archive does not produce these binaries. A `kind: "manual"` recipe saying "downloaded from the Internet Archive" would describe the archivist's action, not the artifact's production — and the format's `recipe` is about the latter.
 - **`lineage`.** The fichas have successors (GEL → NetBeans), but a successor in a personal timeline is not a derivation of bytes. `lineage` links artifacts, and these are distinct works.
 - **Shipping the record next to the download.** The natural home for a record is beside the artifact (`CORE-12`); serving `downloads/gel/Gel86a.zip.variorum.json` would mean changing the streamer and the admin panel. That is a change to live code in a production site, so it is a decision for the owner, not for the agent that adopted the format. Until then the record is published with the repository.

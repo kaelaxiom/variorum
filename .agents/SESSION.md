@@ -473,3 +473,72 @@ Close one of the three normative questions the Phase 3 case studies produced, en
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - Two normative questions for 0.2: `REC-9`'s single prompt field, a `generated` state.
 - Remaining consistency items: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX still planned.
+
+# SESSION — 2026-11-28 (early): the prompt is one field, and the record names it
+
+## Objective
+
+Close the second normative question the Phase 3 case studies produced: `REC-9` assumed a generator with one prompt field, and Suno's Custom mode has six textual inputs and no box called "prompt".
+
+## Done
+
+- **`REC-9` rewritten.** `recipe.prompt` MUST hold, verbatim, the value of one field the generator accepts — never a concatenation, never a paraphrase — and an absent `recipe.promptField` leaves the mapping unspecified rather than implying the generator has one field.
+- **`REC-23` (new, SHOULD):** a generator with more than one textual field SHOULD name the field `prompt` holds in `recipe.promptField`, using the provider's own name, and SHOULD record the remaining fields in `parameters` under their provider names (`REC-11`).
+- **`REC-24` (new, MUST):** `promptField`, when present, MUST be a non-empty string and MUST NOT appear without `prompt`.
+- `docs/adr/ADR-0016-the-prompt-is-one-field-and-the-record-names-it.md` — four options (an object of named fields, the provider's literal `prompt`, a semantic winner defined in the rule, one string with a declared field name), why the object repeats the split ADR-0015 refused and why the vendor's literal name would move the standard's answer with the vendor.
+- Schema types `recipe.promptField` (`minLength: 1`) and binds it to `prompt` with `dependentRequired`; tool 0.9.0 checks both clauses, for a recipe and for every hybrid stage (`REC-19`), and warns on nothing when the member is absent.
+- Four vectors in `spec/vectors/recipe.json` (one accept, three rejects); four tests in `tests/test_validate.py`, one pinning that an unnamed prompt draws no warning.
+- `docs/case-studies/echo-language.md` records that the question it left open is closed and that `"promptField": "lyrics"` is one edit in the adopter's repository.
+
+## Numbers
+
+- 208 vectors in thirteen groups; `conform --coverage` 102/142 referenced, 40 exempt, 0 uncovered.
+- 143 unit tests — re-run green at the start of the lifecycle session on the same day, because this commit did not update STATE, HANDOFF or this file.
+
+## Decisions
+
+- **Absence is silence, not completeness.** Making an absent `promptField` mean "the generator has one field" would repeat the defect ADR-0015 closed for `determinism`: a decision no producer made, read as a claim.
+- **One string plus a label, not an object.** An object of named fields gives a member every consumer reads as a string a second grammar and duplicates `parameters` for the non-text half of the same call.
+
+## Open
+
+- The lifecycle question — whether a generated take gets a state of its own — closed later the same day by ADR-0017.
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- The documented deferrals: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX planned.
+
+# SESSION — 2026-11-28 (lifecycle): two premises, no `generated` state
+
+## Objective
+
+Close the last normative question the Phase 3 case studies produced: what a generated take that was produced but never judged records as its state.
+
+## Done
+
+- **`STA-7` and `STA-9` extended.** With no transitions, `current` MUST be `draft` or `candidate`; the first transition MUST start at `draft` or `candidate`. §5.3 now states the principle: only a premise may be held without a transition, and every state that asserts a decision requires one. §5.2's glosses and the seven values are untouched.
+- **`candidate → archived` added to §5.4.** Shelving a batch nobody judged is a decision about activity, not a judgement of the work; without it a record would have to record a rework it never did.
+- **`state` is not provenance.** §5.6 says why there is no `generated` state: that a model made the bytes is `producer.kind` and `recipe.kind` (tool, model, prompt, determinism), and `state` records decisions.
+- **ADR-0017** records four options — add `generated` (refused: provenance in a section about decisions, and a second premise no rule can distinguish from `draft`), redefine `draft` as "undecided" (refused: answers by emptying the word, leaves finished work labelled unfinished), silence as the only answer (refused: makes the most common machine workflow inexpressible), two premises with no new vocabulary (chosen).
+- **Schema:** a `description` on the `state` object; no new assertion. `STA-7`/`STA-9` are relational and were never expressible there.
+- **Tool 0.10.0:** `INITIAL_STATES = {"draft", "candidate"}` gates both rules; `LEGAL_TRANSITIONS["candidate"]` gains `archived`.
+- **Vectors:** two replaced, three added. `state/empty-transitions-mean-draft` became `state/empty-transitions-cannot-claim-a-decision` (`approved`, no transitions), and `state/first-transition-starts-at-draft` became `state/first-transition-starts-at-a-premise` (`approved → published` with no earlier history). New accepts: born a `candidate`, rejected without a draft step, archived without a judgement. 208 → 211.
+- **Tests:** replaced `test_first_transition_must_start_at_draft` — its fixture used `candidate → candidate`, which `STA-10` rejects on its own — with `test_first_transition_must_start_at_a_premise`, and added four for the premises, the still-invalid decision state and the two new edges. `StateVocabularyTests` in `tests/test_docs.py` now compares §5.2's table with `variorum.STATES`.
+- **Case studies:** `echo-language`, `software-tools` and `3d-printerator` no longer reason from the old clause; `echo-language` states that the batch can now carry `candidate` with no transitions.
+
+## Numbers
+
+- 148 unit tests OK (was 143).
+- `conform --coverage`: 211/211 PASS; 102/142 rules referenced, 40 exempt, 0 uncovered.
+- Seven examples validate; the `software-tools-inventory` record keeps its known `REC-5` warning.
+
+## Decisions
+
+- **A transition is an attestation; never require one to reach a state that asserts no decision.** The old rule forced a fabricated `draft → candidate` on every artifact born complete — the one thing a record must not do.
+- **The vocabulary does not multiply with the number of ways an artifact can be made.** `candidate` was already the right word; the fix was to let it be held without a transition, not to add `generated`.
+- **Two premises, one rule.** `draft` and `candidate` are the only states that assert no decision, and the only two an empty transition list may hold; the five decision states keep their actor-and-timestamp requirement.
+- **A third rendering deserves a test.** The spec table defines the vocabulary; nothing read it. `StateVocabularyTests` closes the triangle with `tests/test_schema.py`.
+
+## Open
+
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- Phase 3's remaining work is the site (domain) and the announcement; no normative question from the case studies is open.
+- The documented deferrals: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX planned.

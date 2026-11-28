@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.9.0"
+TOOL_VERSION = "0.10.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -63,6 +63,11 @@ RECIPE_KINDS = {"manual", "build", "generative", "hybrid"}
 # every vertex and no byte, and the record needs a way to say so (ADR-0015).
 DETERMINISM_GRADES = ("none", "seeded", "content", "full")
 STATES = {"draft", "candidate", "approved", "published", "superseded", "rejected", "archived"}
+# STA-7/STA-9: the two states that assert no decision, and the only two a
+# record may hold without a transition. `draft` says the artifact may still
+# change; `candidate` says it is complete and nothing has been decided about
+# it. A machine-made take is born a candidate, not a draft (ADR-0017).
+INITIAL_STATES = {"draft", "candidate"}
 ACTOR_KINDS = {"human", "organization", "software"}
 ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
 
@@ -152,7 +157,7 @@ PROV_VERSIONS = ("2013",)
 # STA-10: legal lifecycle transitions.
 LEGAL_TRANSITIONS: dict[str, set[str]] = {
     "draft": {"candidate", "archived"},
-    "candidate": {"approved", "rejected", "draft"},
+    "candidate": {"approved", "rejected", "draft", "archived"},
     "approved": {"published", "superseded", "archived"},
     "published": {"superseded", "archived"},
     "superseded": {"archived"},
@@ -499,8 +504,8 @@ def validate_state(record: dict[str, Any], report: Report) -> None:
 
         source_state = transition.get("from")
         target_state = transition.get("to")
-        if index == 0 and source_state != "draft":
-            report.add("STA-9", "the first transition must start from 'draft'")
+        if index == 0 and source_state not in INITIAL_STATES:
+            report.add("STA-9", "the first transition must start from 'draft' or 'candidate'")
         if previous_to is not None and source_state != previous_to:
             report.add("STA-8", f"transitions[{index}] starts from '{source_state}' but the previous one ended in '{previous_to}'")
         if source_state in STATES and target_state in STATES and target_state not in LEGAL_TRANSITIONS[source_state]:
@@ -512,8 +517,8 @@ def validate_state(record: dict[str, Any], report: Report) -> None:
             last_to = transitions[-1].get("to") if isinstance(transitions[-1], dict) else None
             if last_to != current:
                 report.add("STA-7", f"'state.current' is '{current}' but the last transition ends in '{last_to}'")
-        elif current != "draft":
-            report.add("STA-7", "'state.current' must be 'draft' when there are no transitions")
+        elif current not in INITIAL_STATES:
+            report.add("STA-7", "'state.current' must be 'draft' or 'candidate' when there are no transitions")
 
     if current == "superseded":
         successor = state.get("supersededBy")

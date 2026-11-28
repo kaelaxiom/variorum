@@ -2,7 +2,7 @@
 
 **Phase:** 3 — Adoption (three of three case studies done; the site waits on a domain)
 **Spec version:** 0.1.0-draft (record format `0.1`, vector suite `variorum-vectors/1`)
-**Updated:** 2026-11-27
+**Updated:** 2026-11-28
 
 ## What exists
 
@@ -20,23 +20,24 @@
 - [x] `spec/90-extensions/swhid.md` — the SWHID 1.2 bridge (`SWH-1`…`SWH-8`), a sibling identifier, opt-in per record
 - [x] `spec/90-extensions/spdx.md` — the SPDX 2.3 bridge (`SPDX-1`…`SPDX-8`), a pointer to the bill of materials, opt-in per record
 - [x] `spec/90-extensions/prov.md` — the W3C PROV bridge (`PROV-1`…`PROV-6`), a member-by-member projection rather than a pointer, opt-in per record
-- [x] `spec/vectors/` — 204 vectors in thirteen groups, real fixtures, `exemptions.json` with reasons
+- [x] `spec/vectors/` — 211 vectors in thirteen groups, real fixtures, `exemptions.json` with reasons
 - [x] `schema/variorum.schema.json` — JSON Schema 2020-12, including the `variorum:semver`, `variorum:c2pa`, `variorum:swhid`, `variorum:spdx` and `variorum:prov` claim shapes
-- [x] `tools/variorum.py` — reference CLI 0.8.0 (validator, `conform` runner, five bridge checks, `show` renders tool chains, stdlib only)
+- [x] `tools/variorum.py` — reference CLI 0.10.0 (validator, `conform` runner, five bridge checks, `show` renders tool chains, `state` knows the two premises, stdlib only)
 - [x] `docs/adoption.md` — the core-only adoption path, performed on `instruisto`'s release `github-copilot-agents/v1.1.0` rather than summarised afterwards; §12 covers adopting an artifact you did not produce
 - [x] `docs/case-studies/` — an index with the bar every case study must meet, plus three adopters: `software-tools.md` (an archive that publishes artifacts it did not make, one `core` record for a 2002 installer fetched back from its own live site), `3d-printerator.md` (a CAD repository that builds what it records, one record with `recipe`, `lineage` and a `state` ending in `rejected`) and `echo-language.md` (a content project whose four Suno takes carry generative recipes, a lineage edge to the lyric source and the `c2pa` bridge pointing at the provider's embedded manifest)
 - [x] `examples/` — seven real records in five directories (records *this* repository ships; a case study's record lives in the adopter's)
-- [x] `tests/` — 139 unit tests (validator + five bridges + vector-suite integrity + relative-link integrity + the README record must be a shipped one + every case study must be listed in its index + `show` must render both `recipe.tool` shapes + a path that is not a file gets a sentence, not a traceback + the schema and the tool must agree on every shared vocabulary)
+- [x] `tests/` — 148 unit tests (validator + five bridges + vector-suite integrity + relative-link integrity + the README record must be a shipped one + every case study must be listed in its index + `show` must render both `recipe.tool` shapes + a path that is not a file gets a sentence, not a traceback + the schema and the tool must agree on every shared vocabulary + the spec's state table must agree with both)
 - [x] `.github/workflows/ci.yml` — tests, conformance with coverage, examples on Python 3.11/3.13
-- [x] ADRs 0001–0015
+- [x] ADRs 0001–0017
 
 ## Verified on the last session
 
-- `python3 -m unittest discover -s tests` → 139 tests OK.
-- `python3 tools/variorum.py conform --coverage` → 204/204 PASS; 100/140 rules referenced, 40 exempt, 0 uncovered.
-- All seven records under `examples/*/*.variorum.json` validate.
-- `REC-12`'s fourth grade (`content`) and `REC-22` are in the spec, the schema, the tool, three vectors and ADR-0015; the schema no longer asserts a value for a SHOULD-graded member, and `tests/test_schema.py` pins that.
-- Every PROV citation in `spec/90-extensions/prov.md` was opened and checked against PROV-DM (entity, activity, agent, revision, quotation, primary source, attribute table, `prov:value` and Example 53, qualified names, extensibility §6), PROV-O (`generatedAtTime`, `invalidatedAtTime`, `no longer usable`) and PROV-CONSTRAINTS (§1.2 anonymous toplevel instance and "instances need not be valid", §2.4 cycle with a strictly-precedes edge, §7.2 distinct bundle names). One quotation inherited from the draft was wrong and is fixed: §5.5.2 says alternates "present aspects of the same thing".
+- `python3 -m unittest discover -s tests` → 148 tests OK.
+- `python3 tools/variorum.py conform --coverage` → 211/211 PASS; 102/142 rules referenced, 40 exempt, 0 uncovered.
+- All seven records under `examples/*/*.variorum.json` validate (the `software-tools-inventory` record still emits its known `REC-5` warning about a missing tool version, which is a SHOULD by ADR-0005).
+- The lifecycle question is answered: `STA-7` and `STA-9` allow `draft` or `candidate` as the two premises, `candidate → archived` is legal, and `state` is stated not to be a record of provenance (ADR-0017). A `generated` state was refused, not postponed.
+- `tests/test_docs.py` now reads §5.2 of the state specification and compares the table with the tool's vocabulary; `tests/test_schema.py` already compared the schema with the tool, so all three renderings cannot drift apart.
+- The old clause was spelled into exactly two vectors and one unit test. All three were replaced — and one of them, `test_first_transition_must_start_at_draft`, was already wrong under the old rules: its fixture used a `candidate → candidate` transition that `STA-10` rejects on its own.
 
 ## What does not exist yet
 
@@ -46,4 +47,4 @@
 
 ## Next
 
-See [HANDOFF.md](HANDOFF.md). All five bridges are written and Phase 3's case studies are complete: three adopters, each covering ground the others could not — an archive publishing what it did not make, a CAD repository that builds what it records, and a content project whose artifacts come out of a model. What remains in Phase 3 is the public site, and nothing in the repository can start it without a domain from the owner. Of the questions the case studies produced, the determinism gap is closed (`REC-12` now has `content`, `REC-22` names its basis, ADR-0015), and the schema defect it exposed is fixed. Two remain, each a normative change needing an ADR before 0.2: `REC-9`'s assumption of one prompt field where a generator has six, and the absence of a `generated` state or of a transition a generator can make about its own output.
+See [HANDOFF.md](HANDOFF.md). All five bridges are written, Phase 3's case studies are complete, and the three normative questions they produced are closed by ADR-0015, ADR-0016 and ADR-0017. What remains in Phase 3 is the public site, which cannot start without a domain from the owner, and the announcement after the owner's review. No normative question from adoption is open any more; what is left is the small set of documented deferrals — `conform --verbose` has no skipped-bridge report, `extensions["variorum:semver"].tag` holds one tag per record, `SPDX-7`'s comparison is stated rather than performed, and CycloneDX remains the one planned bridge.
