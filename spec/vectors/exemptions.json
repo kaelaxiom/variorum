@@ -21,7 +21,7 @@
     "LIN-11": "Whether a fork starts a new work is decided when the graph is resolved, not when one record is read.",
     "LIN-12": "Whether generation extends or splits a work is a semantic judgement about the parent edge, outside any single record.",
     "LIN-13": "Advice about how much ancestry a producer chooses to store. Both choices yield valid records.",
-    "REC-13": "The prohibition on claiming 'full' determinism without verifying it depends on a re-execution that no record contains.",
+    "REC-13": "The prohibition on claiming 'full' or 'content' determinism without verifying it depends on a re-execution that no record contains.",
     "REC-17": "A preference between two valid ways of referencing an input. Both the id form and the URI form conform (REC-15).",
     "REC-20": "A statement about how a recipe must be read, not about what a recipe contains.",
     "REC-21": "Consumers must not report reproducibility from a recipe alone. Consumer behaviour.",

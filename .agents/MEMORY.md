@@ -134,3 +134,15 @@ All three case studies ran `python3 tools/variorum.py` over paths relative to th
 `validate_semver_bridge` read `claim = extensions.get("variorum:semver")` and returned early on `None`, so a record carrying `"variorum:semver": null` skipped every SemVer rule — while `SEM-1` says "When present, its value MUST be an object" and the schema had always typed it as one. The four later bridges used `if KEY not in extensions` and were right for a reason nobody had written down.
 
 **Lesson:** when a rule's trigger is presence, test membership, not a defaulted lookup. `.get()` returns `None` both for "the author never wrote the key" and for "the author wrote the key empty", and those are different claims; only one of them is silence.
+
+## 2026-11-27 — An absence is not a claim
+
+`REC-12` had no value for a build that fixes every vertex and no byte, so the adopter left the member out — and the record then said exactly as much as one whose producer never considered determinism. The measurement was real; the vocabulary had no room for it.
+
+**Lesson:** a graded member with no value for the case the field exists for is not cautious, it is silent. When a measurement falls between the values, the missing value is the defect: add it, define the whole scale (the old values had never been defined either), and give the new grade its own basis — "the same content" is a different kind of claim from "the same bytes" and needs the normalization that makes it testable.
+
+## 2026-11-27 — A SHOULD in prose is not a SHOULD in the schema
+
+`schema/variorum.schema.json` enumerated `determinism` while `REC-12` said SHOULD. The reference tool warned; a standard JSON Schema validator rejected the same record. `CON-8` already said which behaviour was right, and nothing had ever loaded the schema to notice.
+
+**Lesson:** a machine-readable contract that expresses a recommendation as an `enum` silently promotes it to a rule. Either the schema documents the vocabulary without asserting it, or the specification promotes the rule to a MUST — the middle is two implementations that disagree about a record neither of them has seen. And if the schema is part of the contract, a test must read it: a file no test loads drifts at the speed of its own edits.

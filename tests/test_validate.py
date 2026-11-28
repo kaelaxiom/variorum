@@ -202,7 +202,34 @@ class ValidationTests(unittest.TestCase):
         )
 
     def test_unknown_determinism_is_only_a_warning(self) -> None:
-        self.assert_warning(record_with(recipe={"kind": "manual", "determinism": "maybe"}), "REC-12")
+        for grade in ("maybe", "approximate", 42):
+            with self.subTest(grade=grade):
+                self.assert_warning(record_with(recipe={"kind": "manual", "determinism": grade}), "REC-12")
+
+    def test_every_determinism_grade_is_accepted(self) -> None:
+        """REC-12's vocabulary is a SHOULD: no recognised grade may warn."""
+        for grade in variorum.DETERMINISM_GRADES:
+            with self.subTest(grade=grade):
+                recipe: dict[str, object] = {"kind": "manual", "determinism": grade}
+                if grade == "content":
+                    recipe["parameters"] = {"normalization": "line endings normalized to LF"}
+                report = variorum.validate_record(record_with(recipe=recipe))
+                self.assertTrue(report.ok, report.errors)
+                self.assertEqual([], [issue for issue in report.warnings if issue.rule == "REC-12"])
+
+    def test_a_content_claim_needs_its_normalization(self) -> None:
+        """REC-22: 'the same content' is not self-defining, so its absence warns."""
+        self.assert_warning(record_with(recipe={"kind": "manual", "determinism": "content"}), "REC-22")
+
+    def test_a_content_claim_with_a_normalization_is_quiet(self) -> None:
+        report = variorum.validate_record(record_with(recipe={
+            "kind": "manual",
+            "determinism": "content",
+            "parameters": {"normalization": "binary STL: triangle multiset, facet order ignored"},
+        }))
+        self.assertTrue(report.ok, report.errors)
+        determinism_warnings = [issue for issue in report.warnings if issue.rule in {"REC-12", "REC-22"}]
+        self.assertEqual([], determinism_warnings)
 
     # State -------------------------------------------------------------- #
 

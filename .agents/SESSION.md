@@ -438,3 +438,38 @@ Commit and push the PROV bridge the previous run left in the tree, then close on
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - Three normative questions for 0.2: `REC-12`'s determinism value, `REC-9`'s single prompt field, a `generated` state.
 - Remaining consistency items: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX still planned.
+
+# SESSION — 2026-11-27 (evening): determinism gets a content grade
+
+## Objective
+
+Close one of the three normative questions the Phase 3 case studies produced, end to end: the `REC-12` gap the `3d-printerator` measurement exposed. No owner decisions involved.
+
+## Done
+
+- **`REC-12` gained a fourth grade, `content`, and the four are now defined.** `none`, `seeded`, `content` and `full` had only ever been listed; the table states what each claims. `content` is the measured middle: the same values under a stated normalization, not necessarily the same bytes. `REC-13` was extended rather than duplicated — a `content` claim requires a verified re-execution exactly as `full` does.
+- **`REC-22` (new, SHOULD):** a `content` claim SHOULD state its normalization in `parameters.normalization` (on the recipe, or on the hybrid stage that carries the claim); the tool warns when it is absent. A dedicated member was considered and rejected — `parameters` already holds producer facts no rule can verify, and a member would add surface without adding a check.
+- **Fixed the schema defect the member exposed:** `recipe.determinism` was an `enum`, although `REC-12` is a SHOULD, so a standard JSON Schema validator rejected a record `CON-8` calls conformant. The property now carries a description and no assertion.
+- **`tests/test_schema.py` (new).** The schema had never been read by a test. It now pins every closed vocabulary the schema and the tool share (recipe kinds, the seven states in three places, the eight relations, actor kinds, algorithms, conformance classes, the five bridge keys) and asserts that `determinism` carries no `type`, `enum` or other assertion.
+- **Three vectors, all accepts:** `content` with normalization, `content` without (warning, not invalidation), and an unrecognised grade (the over-strictness guard). Suite 201 → 204.
+- **Case study brought forward:** `3d-printerator.md` dates its record's absence to stamping and says the gap is closed by ADR-0015; the record itself may add the grade in one edit (its rebuilds already satisfy `REC-13`), in the adopter's repository.
+- ADR-0015; CHANGELOG (`Added`, `Changed`, `Fixed`); README and vectors README counts; PLAN gained the 0.2 questions with this one checked; STATE and HANDOFF updated.
+
+## Numbers
+
+- 139 unit tests OK (was 128).
+- `conform --coverage`: 204/204 PASS; 100/140 rules referenced, 40 exempt, 0 uncovered (was 201/201, 99/139).
+- Seven example records validate.
+
+## Decisions
+
+- **A grade, not a domain word.** `geometry` would name the CAD case and misname every other medium; `content` names what is determined, whatever the serializer calls it. `canonical` would assert a property of the artifact the record cannot know.
+- **A SHOULD, not a MUST.** The case for `content` is that a vocabulary cannot foresee every case; a MUST on the value space would make the next unforeseen case invalid and teach producers to omit the member.
+- **The schema must not be stricter than `CON-8`.** This is the same rule the extension-name pattern already followed; the test makes it hard to undo.
+- **Extend `REC-13` instead of adding a near-duplicate rule.** Both grades are unverified-claim prohibitions; one identifier, two clauses.
+
+## Open
+
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- Two normative questions for 0.2: `REC-9`'s single prompt field, a `generated` state.
+- Remaining consistency items: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX still planned.

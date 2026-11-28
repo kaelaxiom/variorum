@@ -90,6 +90,51 @@
       "expect": { "valid": true }
     },
     {
+      "name": "recipe/determinism-content-grade",
+      "class": "recipe",
+      "description": "A re-execution that fixes every vertex and no byte is content-deterministic: the same geometry, three digests. The normalization says how the comparison is made (REC-22).",
+      "rules": ["REC-12", "REC-22"],
+      "patch": {
+        "recipe": {
+          "kind": "build",
+          "source": { "ref": "https://github.com/cazucito/3d-printerator", "commit": "a46501b" },
+          "tool": [{ "name": "openscad", "version": "2021.01" }],
+          "parameters": {
+            "part": "holder",
+            "export_format": "binstl",
+            "normalization": "binary STL: the multiset of triangles, facet order ignored"
+          },
+          "determinism": "content"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/determinism-content-needs-a-basis",
+      "class": "recipe",
+      "description": "REC-22 is a SHOULD: a content claim without its normalization is incomplete, not invalid, and a validator that rejected it would fail this vector.",
+      "rules": ["REC-22"],
+      "patch": {
+        "recipe": {
+          "kind": "build",
+          "source": { "ref": "https://github.com/cazucito/3d-printerator", "commit": "a46501b" },
+          "tool": [{ "name": "openscad", "version": "2021.01" }],
+          "determinism": "content"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/determinism-unknown-grade",
+      "class": "recipe",
+      "description": "REC-12 is a SHOULD: an unrecognised grade is a warning, never a rejection. A closed enum would punish the producer who knows a case the vocabulary does not.",
+      "rules": ["REC-12"],
+      "patch": {
+        "recipe": { "kind": "manual", "steps": ["Retouched by hand."], "determinism": "approximate" }
+      },
+      "expect": { "valid": true }
+    },
+    {
       "name": "recipe/generative-prompt-required",
       "class": "recipe",
       "description": "A generative recipe without the prompt is a claim with no evidence.",

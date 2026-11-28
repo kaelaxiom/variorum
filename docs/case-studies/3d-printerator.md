@@ -108,7 +108,7 @@ Consequences, in the format's own terms:
 - `determinism: "none"` would be wrong in the other direction: the recipe determines the geometry completely.
 - So the member is absent, and the absence is the honest statement: *this recipe determines the shape, not the bytes.*
 
-No value in `REC-12` covers that case. That is a gap in the standard, recorded in this repository's [HANDOFF](../../.agents/HANDOFF.md) as an open question rather than patched into a shipped enum on the strength of one measurement.
+No value in the `REC-12` this record was stamped against covered that case. The gap it recorded as open was closed in the draft by [`ADR-0015`](../adr/ADR-0015-a-recipe-can-determine-the-content-not-the-bytes.md): `determinism: "content"` names exactly this — the same content under a stated normalization, not necessarily the same bytes — and `REC-13` now requires a verified re-execution for that claim as it already did for `full`. The record still omits the member because it was stamped before the grade existed; adding it, together with `parameters.normalization`, is one edit the adopter can make from the same measurement.
 
 The same fact is why `lineage` matters more here than in a software release. The artifact is one serialisation of a design; the design is recovered by following the `render` edge back to the `.scad`, whose digest the record also carries. A consumer can hash the source and check the parent without any registry. The source has no record of its own — `LIN-8` allows that, and `LIN-9` is the rule that keeps the claim honest: this lineage is not complete, it ends at a source that has an identity but no record.
 
@@ -160,7 +160,7 @@ One tool, one record, one claims file, one document and one README line — 511 
 
 ## What this case study says about the standard
 
-- **A recipe earns its keep when it is allowed to say less than it could.** The most informative member of this record is the one that is absent: the measurement behind `determinism` is what a consumer needs, and the format has no field for "the geometry, not the bytes".
+- **A recipe earns its keep when the vocabulary fits what was measured.** The most informative member of this record was the one that had to be absent: the measurement found a middle between `none` and `full`, and the format had no field for "the content, not the bytes" — a gap the `content` grade now fills ([ADR-0015](../adr/ADR-0015-a-recipe-can-determine-the-content-not-the-bytes.md)). An enum that cannot express a measured middle pushes honest producers into silence.
 - **`state` on an artifact that never shipped is the class doing its job.** Most version schemes cannot say *this existed and lost*; `rejected` can, and `STA-11`'s refusal to resurrect it is what makes the statement worth recording.
 - **A build recipe's `source.digest` is a lineage edge a consumer can verify without records.** `LIN-8`'s unresolvable parent is the normal case for sources, not a defect.
 - **Adoption keeps finding the documentation.** The front-page example, the `state` class, the tool shape — each case study has found at least one place where the standard's own text or code disagreed with itself.

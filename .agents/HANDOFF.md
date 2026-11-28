@@ -1,6 +1,25 @@
 # HANDOFF
 
-## Last session — 2026-11-27 (afternoon: PROV pushed, and the null that was not a claim)
+## Last session — 2026-11-27 (evening: determinism, and a SHOULD the schema called a MUST)
+
+**Did:** closed the determinism gap the `3d-printerator` case study had left open, and fixed the schema defect that reading the member exposed.
+
+- **`REC-12` listed three grades and defined none.** The measurement fits none of them: one source, one toolchain, three builds with the same 7,492 triangles and three different digests. `full` is forbidden by `REC-13` (no verified identical digest), `none` denies a determinism that is real, so the record omitted the member — and an absence cannot be told apart from a producer who never considered the question. `REC-12` now carries a fourth grade, `content`, and the four are defined in a table rather than listed: `none` (nothing), `seeded` (the inputs are recorded, nothing verified), `content` (the same values under a stated normalization, not necessarily the same bytes), `full` (the identical digest, verified). `REC-13` is extended, not duplicated: a `content` claim needs a verified re-execution exactly as `full` does.
+- **`REC-22` is new and is a SHOULD.** A record claiming `content` SHOULD state the normalization in `parameters.normalization` (on the recipe, or on the hybrid stage that carries the claim); the reference tool warns when it is missing. A dedicated member (`determinismBasis`) was considered and rejected: `parameters` already holds producer facts no rule can verify, and a member would add surface without adding a check. ADR-0015 records the four options and why `content` beats `geometry` (domain-specific) and a split member (breaks every existing record's shape).
+- **The schema was spelling `REC-12` as a MUST.** `recipe.determinism` was `{"enum": ["none", "seeded", "full"]}`, so a record with `"determinism": "maybe"` — conformant by `CON-8` — was rejected by any standard JSON Schema validator while the reference tool only warned. The property now carries a description and no assertion. This is the same defect class as the extension-name pattern (deliberately looser than `CORE-10` so "a warning is not turned into a schema rejection"), and the first time the schema had been read by a test at all: `tests/test_schema.py` compares every closed vocabulary the schema and the tool share and fails if `determinism` grows a `type` or an `enum`.
+- **Three vectors, all accepts**, because the point is over-strictness: `content` with its normalization, `content` without (a warning, not an invalidation), and an unrecognised grade (the guard against a validator that turns the SHOULD into a MUST). Suite 201 → 204; coverage 100/140.
+- **`docs/case-studies/3d-printerator.md` was brought forward without rewriting its history:** the record's absence is now dated to its stamping (the grade did not exist), and the closing bullet says the gap it found is closed by ADR-0015. The record in the adopter's repository could add `determinism: "content"` and `parameters.normalization` in one edit — its two rebuilds already satisfy `REC-13` — but that commit belongs there, not here.
+
+**Verified:** 139 unit tests OK; `conform --coverage` 204/204 PASS (100/140 referenced, 40 exempt, 0 uncovered); all seven examples validate.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Phase 3's case studies are complete; the site is what remains**, and it cannot start without a domain. Owner decision.
+- **Two normative questions remain** from the case studies, each needing an ADR before 0.2, now tracked in PLAN: `REC-9` assumes one prompt field where Suno's Custom mode has six (the `echo-language` record puts the lyric field in `recipe.prompt` and the rest in `parameters` — a defensible reading, not a defined one); and the lifecycle vocabulary has no answer for a take that was produced but never judged (`STA-15` makes silence legal, which was enough for the batch, but says nothing about a generator recording its own output).
+- `conform --verbose` still has no "skipped bridge vector" report; `extensions["variorum:semver"].tag` still holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays the one planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-27 (afternoon: PROV pushed, and the null that was not a claim)
 
 **Did:** committed and pushed the PROV bridge the previous run left in the tree, then closed the consistency item that had been open since the C2PA bridge.
 

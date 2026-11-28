@@ -46,7 +46,14 @@ How the artifact was produced.
 
 **REC-11.** `recipe.parameters` SHOULD record every parameter that affects the output: resolution, duration, frame rate, aspect ratio, guidance, steps, voice, style.
 
-**REC-12.** `recipe.determinism` SHOULD be one of `none`, `seeded`, `full`, declaring how much of the output the recipe actually determines.
+**REC-12.** `recipe.determinism` SHOULD be one of `none`, `seeded`, `content`, `full`, declaring how much of the output a faithful re-execution of the recipe determines.
+
+| Value | What the record claims |
+|---|---|
+| `none` | Nothing: a re-execution produces a different artifact with no verifiable relation to this one. |
+| `seeded` | The sampling inputs are recorded, so a re-execution may reproduce the output on the same provider and model; nothing about the result has been verified. |
+| `content` | The content: a re-execution produces the same geometry, text or values under the normalization the record states (`REC-22`), but not necessarily the same bytes, so the digest may differ. |
+| `full` | The bytes: a re-execution has been verified to produce the identical digest (`REC-13`). |
 
 ```json
 "recipe": {
@@ -59,9 +66,31 @@ How the artifact was produced.
 }
 ```
 
-**REC-13.** A producer MUST NOT claim `determinism: "full"` unless a re-execution has been verified to produce the identical digest.
+The values are grades of a claim, not rungs of a ladder: `seeded` speaks about the inputs, `content` and `full` about the output. Because `REC-12` is a SHOULD, an unrecognised grade is a warning and never a rejection (`CON-8`, [ADR-0005](../docs/adr/ADR-0005-should-violations-are-warnings.md)); a closed vocabulary that punished the case nobody had measured would teach producers to leave the member out, which is how a measured fact becomes an absence a reader cannot tell from silence.
+
+`content` exists because a build can fix every vertex and no byte. The first adopter to hit the case measured it: one source, one toolchain, three builds — the same 7,492 triangles and three different digests, because the facet order varies between runs. `full` would be false under `REC-13` and `none` would deny a determinism that is real, so the record said nothing, and the absence was indistinguishable from a producer who never considered the question ([`docs/case-studies/3d-printerator.md`](../docs/case-studies/3d-printerator.md)). The same member answers that case:
+
+```json
+"recipe": {
+  "kind": "build",
+  "source": { "ref": "https://github.com/cazucito/3d-printerator", "commit": "a46501b" },
+  "tool": [ { "name": "openscad", "version": "2021.01" } ],
+  "parameters": {
+    "part": "holder",
+    "export_format": "binstl",
+    "normalization": "binary STL: the multiset of triangles, facet order ignored"
+  },
+  "determinism": "content"
+}
+```
+
+**REC-13.** A producer MUST NOT claim `determinism: "full"` unless a re-execution has been verified to produce the identical digest, nor `determinism: "content"` unless a re-execution has been verified to produce the same content under the normalization the record states.
 
 This rule exists because the opposite is common. Recording `seed` does not make a diffusion pipeline reproducible; providers change weights, schedulers and hardware kernels between runs. A field that lies is worse than a field that is absent.
+
+**REC-22.** When `determinism` is `content`, the record SHOULD state the normalization under which two executions are compared, as a non-empty string in `parameters.normalization` on the object that carries the claim — the recipe, or the stage of a hybrid recipe.
+
+"The same content" is not self-defining, and the digest cannot stand in for it: two files that hold the same geometry have different digests by construction, so a consumer who compares digests will report a correct recipe as irreproducible. The normalization is what turns the grade into a test — a canonical export, a sorted multiset, a comparison that ignores embedded timestamps. `REC-22` carries a number from after §4.6 because it was added once the case it exists for had been measured; the identifier is stable, the position is not.
 
 ## 4.4 Inputs
 

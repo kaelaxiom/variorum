@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.7.0"
+TOOL_VERSION = "0.8.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -57,6 +57,11 @@ VECTOR_KINDS = {"record", "graph", "jcs"}
 VECTOR_SUITE = "variorum-vectors/1"
 RELATIONS = {"generation", "revision", "edit", "render", "transcode", "fork", "restore", "derivation"}
 RECIPE_KINDS = {"manual", "build", "generative", "hybrid"}
+# REC-12: the determinism grades are a SHOULD-graded vocabulary, so an
+# unrecognised value is a warning and never a rejection (CON-8, ADR-0005).
+# `content` was added after the 3d-printerator measurement: a build can fix
+# every vertex and no byte, and the record needs a way to say so (ADR-0015).
+DETERMINISM_GRADES = ("none", "seeded", "content", "full")
 STATES = {"draft", "candidate", "approved", "published", "superseded", "rejected", "archived"}
 ACTOR_KINDS = {"human", "organization", "software"}
 ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
@@ -432,8 +437,17 @@ def validate_recipe_body(recipe: dict[str, Any], report: Report, path: str) -> N
                     report.add("REC-15", f"'{path}.inputs[{index}].ref' must be a Variorum id or an absolute URI")
 
     determinism = recipe.get("determinism")
-    if determinism is not None and determinism not in {"none", "seeded", "full"}:
-        report.warn("REC-12", f"'{path}.determinism' should be none, seeded or full")
+    if determinism is not None and determinism not in DETERMINISM_GRADES:
+        grades = ", ".join(DETERMINISM_GRADES[:-1]) + " or " + DETERMINISM_GRADES[-1]
+        report.warn("REC-12", f"'{path}.determinism' should be one of {grades}")
+    if determinism == "content":
+        parameters = recipe.get("parameters")
+        normalization = parameters.get("normalization") if isinstance(parameters, dict) else None
+        if not isinstance(normalization, str) or not normalization.strip():
+            report.warn(
+                "REC-22",
+                f"'{path}.parameters.normalization' should state how two executions of a content-deterministic recipe are compared",
+            )
 
     generated_at = recipe.get("generatedAt")
     if generated_at is not None and not is_timestamp(generated_at):

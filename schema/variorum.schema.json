@@ -113,7 +113,9 @@
             }
           }
         },
-        "determinism": { "enum": ["none", "seeded", "full"] },
+        "determinism": {
+          "description": "REC-12: SHOULD be one of none, seeded, content or full (see spec/04-recipe.md). Deliberately unconstrained here: a SHOULD is not a validity rule, and an enum or a type would turn an unrecognised grade into a schema rejection the specification does not authorise (CON-8, ADR-0005)."
+        },
         "environment": { "type": "object" },
         "steps": { "type": "array", "items": { "type": "string" } },
         "stages": {
