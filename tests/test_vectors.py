@@ -9,7 +9,10 @@ implementation must fail here before it fails an implementer.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -126,6 +129,76 @@ class CoverageTests(unittest.TestCase):
             rule for vector in vectors for rule in vector.rules if variorum.RULE_PATTERN.fullmatch(rule)
         }
         self.assertEqual(sorted(referenced - defined), [], "a vector cites a rule the spec does not define")
+
+
+class ProfileTests(unittest.TestCase):
+    """CON-29: a report accounts for every vector, and the profile is its proof."""
+
+    CLASS_LINE = re.compile(r"^profile    (\w+)\s+(\d+) vectors \((\d+) without a bridge claim, (\d+) bridge-only\)$")
+    BRIDGE_LINE = re.compile(
+        r"^bridge     (\S+)\s+(\d+) vectors \((.+)\) — only with the bridge claimed \(CON-9\)$"
+    )
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.vectors, _errors = variorum.load_vectors(VECTORS)
+        cls.lines = variorum.conformance_profile(cls.vectors)
+
+    def class_lines(self) -> dict[str, tuple[int, int, int]]:
+        parsed: dict[str, tuple[int, int, int]] = {}
+        for line in self.lines:
+            match = self.CLASS_LINE.match(line)
+            if match:
+                parsed[match.group(1)] = (int(match.group(2)), int(match.group(3)), int(match.group(4)))
+        return parsed
+
+    def test_every_vector_appears_in_exactly_one_class_line(self) -> None:
+        parsed = self.class_lines()
+        self.assertEqual(list(parsed), list(variorum.CONFORMANCE_CLASS_ORDER), "the profile is fixed-order")
+        self.assertEqual(sum(total for total, _free, _bridged in parsed.values()), len(self.vectors))
+
+    def test_the_class_split_matches_the_vectors(self) -> None:
+        for class_name, (total, without_bridge, bridge_only) in self.class_lines().items():
+            with self.subTest(class_name=class_name):
+                in_class = [vector for vector in self.vectors if vector.class_name == class_name]
+                self.assertEqual(total, len(in_class))
+                self.assertEqual(bridge_only, sum(1 for vector in in_class if vector.bridge))
+                self.assertEqual(without_bridge + bridge_only, total)
+
+    def test_every_bridge_has_one_line_with_its_count(self) -> None:
+        named: dict[str, int] = {}
+        for line in self.lines:
+            match = self.BRIDGE_LINE.match(line)
+            if match:
+                named[match.group(1)] = int(match.group(2))
+        expected: dict[str, int] = {}
+        for vector in self.vectors:
+            if vector.bridge:
+                expected[vector.bridge] = expected.get(vector.bridge, 0) + 1
+        self.assertEqual(named, expected)
+
+    def test_the_smallest_claim_adds_up(self) -> None:
+        closing = [line for line in self.lines if line.startswith("profile    core and no bridge claim:")]
+        self.assertEqual(len(closing), 1, "the profile ends with one reconciling line")
+        run, total, skipped, bridge_only, other_classes = (int(value) for value in re.findall(r"\d+", closing[0]))
+        self.assertEqual(total, len(self.vectors))
+        self.assertEqual(run + skipped, total)
+        self.assertEqual(bridge_only + other_classes, skipped)
+
+    def test_verbose_prints_the_profile(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = variorum.main(["conform", "--verbose"])
+        self.assertEqual(status, 0)
+        self.assertIn("profile    core and no bridge claim:", output.getvalue())
+        self.assertIn("bridge     variorum:semver", output.getvalue())
+
+    def test_the_default_report_does_not_print_the_profile(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = variorum.main(["conform"])
+        self.assertEqual(status, 0)
+        self.assertNotIn("profile    ", output.getvalue())
 
 
 class CommandTests(unittest.TestCase):

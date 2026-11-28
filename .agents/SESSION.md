@@ -542,3 +542,35 @@ Close the last normative question the Phase 3 case studies produced: what a gene
 - Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
 - Phase 3's remaining work is the site (domain) and the announcement; no normative question from the case studies is open.
 - The documented deferrals: `conform --verbose` has no skipped-bridge report, one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX planned.
+
+# SESSION — 2026-11-28 (conformance profile): a report that accounts for what it skipped
+
+## Objective
+
+Close the oldest documented deferral: `conform --verbose` had no "skipped bridge vector" report, so `CON-9`'s permission to skip a bridge an implementation does not claim left the report unaccountable.
+
+## Done
+
+- **`CON-29` (new, §7.5).** A conformance report MUST account for every vector in the suite — passed, failed or skipped — and a skipped vector MUST name whether its class or its bridge was not claimed (`CON-9`). An implementation MAY produce the accounting on request, but MUST NOT state a pass total without the vectors it did not run.
+- **`conform --verbose` prints the suite's profile.** One line per class (total, vectors without a bridge claim, bridge-only ones), one line per bridge (total and classes spanned), and one line reconciling a `core`-and-no-bridge claim with the suite total — 67 of 211 run, 144 skipped (93 bridge-only, 51 in other classes). Every number is derived from the loaded vectors; nothing is stored in a document.
+- **`CONFORMANCE_CLASS_ORDER`** added beside `CONFORMANCE_CLASSES`, which is now derived from it, so the four class names have one ordered source (the profile's row order, and the order every other listing can adopt).
+- **`ProfileTests`** in `tests/test_vectors.py` (six tests): class lines sum to the suite total, each bridge has exactly one line with its count, the reconciling line adds up, `--verbose` prints the block, the default report does not.
+- **ADR-0018** — four options (leave it; a JSON report with its own schema; one line per skipped vector; a derived profile plus a rule), why `CON-10`'s argument applies one level up, and why the counts must be computed rather than documented.
+- **Docs:** §7.5 defines the profile; `spec/vectors/README.md` and `README.md` point at it; CHANGELOG records `CON-29` and tool 0.11.0.
+
+## Numbers
+
+- 154 unit tests OK (was 148).
+- `conform --coverage --verbose`: 211/211 PASS; 102/142 rules referenced, 40 exempt, 0 uncovered. `CON` rules stay outside the coverage denominator, so `CON-29` needs no vector and no exemption.
+- Seven examples validate, unchanged.
+
+## Decisions
+
+- **A skip rule without a denominator is not a conformance result.** `CON-9` said implementations MUST skip unclaimed bridges; nothing said a report must say how many. The same argument `CON-10` makes for rejections — cite the rule, or the verdict is untraceable — applies to a pass over an unstated subset.
+- **The profile describes the suite and a claim, not the run.** It prints when everything passes, which is exactly when a green report needs to say what it did not measure.
+- **No stored counts.** A document with "67 of 211" would be stale at the next vector; the numbers are computed from the suite and the tests recompute them.
+
+## Open
+
+- Owner review, transfer to `cazucito`, site domain, `u-onoma`/`_index` registration.
+- The documented deferrals left: one `semver.tag` per record, `SPDX-7` stated but not performed, CycloneDX planned.

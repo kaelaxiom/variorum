@@ -138,6 +138,7 @@ python3 tools/variorum.py conform --coverage
 - [`spec/vectors/exemptions.json`](spec/vectors/exemptions.json) — the rules no record can decide, each with a stated reason.
 - **Implementation levels:** `core`, `lineage`, `recipe`, `attestation`. Levels are not a ladder — an implementation may claim `recipe` without claiming `lineage`.
 - **Extension bridges:** [`spec/90-extensions/`](spec/90-extensions/) — adjacent standards Variorum coexists with. Written: SemVer ([`semver.md`](spec/90-extensions/semver.md)), C2PA Content Credentials ([`c2pa.md`](spec/90-extensions/c2pa.md)), SWHID ([`swhid.md`](spec/90-extensions/swhid.md)), SPDX ([`spdx.md`](spec/90-extensions/spdx.md)) and W3C PROV ([`prov.md`](spec/90-extensions/prov.md)). A bridge is an opt-in claim and adds no MUST to `core`, so its vectors are required only of implementations that declare the bridge (`CON-28`).
+- **Reporting a run:** `conform --verbose` prints the suite's profile, so a report can account for every vector it skipped — by class or by bridge (`CON-29`).
 
 A validator that rejects a record for violating a **SHOULD** is wrong: SHOULD violations are warnings, never errors ([ADR-0005](docs/adr/ADR-0005-should-violations-are-warnings.md)).
 

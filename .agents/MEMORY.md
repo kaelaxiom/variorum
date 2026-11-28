@@ -158,3 +158,9 @@ All three case studies ran `python3 tools/variorum.py` over paths relative to th
 `test_first_transition_must_start_at_draft` exercised `STA-9` with a `candidate → candidate` transition. `STA-10` rejects that edge on its own, so the test would have stayed green after the first-transition rule changed; it was asserting a coincidence. It now uses `approved → published`, an edge §5.4 allows, so only `STA-9` can fail it.
 
 **Lesson:** a reject fixture must violate exactly the rule under test. When it breaks two, the test cannot say which one the implementation still enforces, and relaxing one leaves it green for the other — the same class of green as a vector that passes for the wrong reason.
+
+## 2026-11-28 — An opt-out needs a denominator
+
+`CON-9` let an implementation skip the bridge vectors it does not claim, and nothing required the report to say how many it skipped. A runner that skipped the vectors it failed produced the same `PASS` as one that skipped exactly the five bridges — the difference lived in a flag, not in the artifact anyone reads. The fix was not a line per skipped vector (144 lines restating public data) but a profile derived from the suite: per class, per bridge, plus one line reconciling the smallest claim with the total.
+
+**Lesson:** when a rule lets an implementation skip something, the report must name what the skip excluded and under which rule. A green count over an unstated subset is not a weaker result — it is an untraceable one, and the argument that makes a rejection cite its rule applies to every number a report prints. Derive such counts from the artifact that defines them, never from a document that will be stale at the next edit.

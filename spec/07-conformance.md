@@ -93,6 +93,10 @@ python3 tools/variorum.py conform [--vectors <dir>] [--coverage] [--verbose]
 
 `--coverage` additionally reports which rule identifiers of sections 00–06 and of the extension bridges under `spec/90-extensions/` are exercised by the suite and fails (exit `1`) when a rule is neither referenced nor exempted.
 
+**CON-29.** A conformance report MUST account for every vector in the suite: each one passed, failed or skipped, and a skipped vector MUST name whether its class or its bridge was not claimed (CON-9). A reporting implementation MAY produce the accounting on request rather than by default, but MUST NOT state a pass total without the vectors it did not run.
+
+`--verbose` prints that accounting: the suite's **profile**, computed from the vectors themselves — one line per class separating the vectors every implementation at that level runs from those that also need a bridge claim, one line per bridge with the classes it spans, and one line reconciling a claim of `core` with no bridge against the suite total — followed by the provenance of every failing vector. The profile describes the suite and a claim, not the run; printing it when everything passes is the point, because a report that only appears on failure cannot say what a green pass skipped ([ADR-0018](../docs/adr/ADR-0018-a-conformance-report-accounts-for-what-it-skipped.md)).
+
 ## 7.6 Coverage
 
 **CON-24.** Every rule identifier defined in `spec/00-overview.md` through `spec/06-attestation.md`, and every rule identifier defined by an extension bridge under `spec/90-extensions/`, MUST be referenced by at least one vector or listed in [`spec/vectors/exemptions.json`](vectors/exemptions.json).

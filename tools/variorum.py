@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.10.0"
+TOOL_VERSION = "0.11.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -52,7 +52,8 @@ RESERVED_SCHEMES = {
     "date", "sequence", "custom", "none",
 }
 SCHEMES_WITHOUT_VERSION = {"none"}
-CONFORMANCE_CLASSES = {"core", "lineage", "recipe", "attestation"}
+CONFORMANCE_CLASS_ORDER = ("core", "lineage", "recipe", "attestation")
+CONFORMANCE_CLASSES = set(CONFORMANCE_CLASS_ORDER)
 VECTOR_KINDS = {"record", "graph", "jcs"}
 VECTOR_SUITE = "variorum-vectors/1"
 RELATIONS = {"generation", "revision", "edit", "render", "transcode", "fork", "restore", "derivation"}
@@ -1276,6 +1277,48 @@ def coverage_report(vectors: list[Vector], spec_dir: Path, exemptions: dict[str,
     return summary, issues
 
 
+def conformance_profile(vectors: list[Vector]) -> list[str]:
+    """Return the suite's obligations per class and per bridge (CON-29).
+
+    A bridge vector is required only of an implementation that claims its
+    bridge (CON-9), so a class line separates the vectors every implementation
+    at that level runs from those that also need a bridge claim. Every count
+    is derived from the loaded suite — no document stores them — so a vector
+    added anywhere moves this profile with it.
+    """
+    lines: list[str] = []
+    for class_name in CONFORMANCE_CLASS_ORDER:
+        in_class = [vector for vector in vectors if vector.class_name == class_name]
+        bridge_only = sum(1 for vector in in_class if vector.bridge)
+        lines.append(
+            f"profile    {class_name:<11}{len(in_class):>4} vectors "
+            f"({len(in_class) - bridge_only} without a bridge claim, {bridge_only} bridge-only)"
+        )
+
+    per_bridge: dict[str, dict[str, int]] = {}
+    for vector in vectors:
+        if vector.bridge:
+            counts = per_bridge.setdefault(vector.bridge, {})
+            counts[vector.class_name] = counts.get(vector.class_name, 0) + 1
+    for bridge in sorted(per_bridge):
+        counts = per_bridge[bridge]
+        spanned = ", ".join(f"{name} {counts[name]}" for name in CONFORMANCE_CLASS_ORDER if name in counts)
+        lines.append(
+            f"bridge     {bridge:<18}{sum(counts.values()):>4} vectors ({spanned}) "
+            "— only with the bridge claimed (CON-9)"
+        )
+
+    core_vectors = [vector for vector in vectors if vector.class_name == "core"]
+    core_bridge = sum(1 for vector in core_vectors if vector.bridge)
+    core_alone = len(core_vectors) - core_bridge
+    outside_core = len(vectors) - len(core_vectors)
+    lines.append(
+        f"profile    core and no bridge claim: {core_alone} of {len(vectors)} vectors run, "
+        f"{len(vectors) - core_alone} skipped ({core_bridge} bridge-only, {outside_core} in other classes)"
+    )
+    return lines
+
+
 def command_conform(arguments: argparse.Namespace) -> int:
     directory = Path(arguments.vectors).resolve() if arguments.vectors else default_vectors_dir()
     vectors, suite_errors = load_vectors(directory)
@@ -1301,6 +1344,9 @@ def command_conform(arguments: argparse.Namespace) -> int:
 
     print(f"suite      {VECTOR_SUITE} from {directory}")
     print(f"vectors    {len(vectors)} total ({accepts} accept, {rejections} reject, {others} graph/jcs)")
+    if arguments.verbose:
+        for line in conformance_profile(vectors):
+            print(line)
     print(f"result     {'PASS' if not failures else 'FAIL'} {len(vectors) - len(failures)}/{len(vectors)}")
     for vector, findings in failures:
         for finding in findings:
@@ -1515,7 +1561,7 @@ def build_parser() -> argparse.ArgumentParser:
     conform_parser = subparsers.add_parser("conform", help="run the conformance vector suite")
     conform_parser.add_argument("--vectors", help="directory holding the vector files (default: spec/vectors)")
     conform_parser.add_argument("--coverage", action="store_true", help="report which rules the suite exercises or exempts")
-    conform_parser.add_argument("--verbose", action="store_true", help="print the provenance of each failing vector")
+    conform_parser.add_argument("--verbose", action="store_true", help="print the suite profile (CON-29) and the provenance of each failing vector")
     conform_parser.set_defaults(handler=command_conform)
 
     show_parser = subparsers.add_parser("show", help="print a human summary of a record")

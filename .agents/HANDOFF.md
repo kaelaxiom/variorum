@@ -1,6 +1,26 @@
 # HANDOFF
 
-## Last session — 2026-11-28 (the lifecycle question, answered without a new state)
+## Last session — 2026-11-28 (midday: the report accounts for what it skipped)
+
+**Did:** closed the oldest documented deferral — `conform --verbose` had no "skipped bridge vector" report — by making a conformance report account for every vector, and printing the profile that makes the accounting checkable. The morning's lifecycle work (ADR-0017) was still uncommitted when this session started; it was re-verified and committed first as `368c950`.
+
+- **The defect.** `CON-9` lets an implementation skip the bridge vectors it does not claim, and the skip had no accounting at all: a runner that skipped the vectors it failed produced the same report as one that skipped exactly the five bridges. The suite makes the difference large — of 211 vectors, 93 are bridge-only and all of those are class `core`, so a `core`-and-no-bridge implementation runs 67 and one claiming everything runs 211; both could print `PASS`. This is the argument `CON-10` settles for rejections (cite a rule, or the verdict is untraceable), one level up.
+- **`CON-29` is new (§7.5).** A conformance report MUST account for every vector — passed, failed or skipped — and a skipped vector MUST name whether its class or its bridge was not claimed (`CON-9`). An implementation MAY produce the accounting on request rather than by default, but MUST NOT state a pass total without the vectors it did not run. It is an implementation rule, like `CON-10`..`CON-13`, so it needs no vector and no exemption — `spec_rule_ids` scans the record families only.
+- **`conform --verbose` prints the suite's profile,** computed from the loaded vectors: one line per class (total, without a bridge claim, bridge-only), one line per bridge (total and classes spanned, marked "only with the bridge claimed (CON-9)"), and one reconciling line — today `core and no bridge claim: 67 of 211 vectors run, 144 skipped (93 bridge-only, 51 in other classes)`. It prints on a green run too; the profile describes the suite and a claim, not the run.
+- **`CONFORMANCE_CLASS_ORDER`** was added beside `CONFORMANCE_CLASSES`, which is now derived from it: the four names have one ordered source, and the profile's row order is deterministic rather than set order.
+- **Six tests** in `ProfileTests` (`tests/test_vectors.py`): class lines sum to the suite total and follow the declared order, each class's split matches the vectors, every bridge has exactly one line whose count matches, the reconciling line adds up, `--verbose` prints the block, and the default report does not.
+- **ADR-0018** records the four options — leave it (refused: the `CON-10` argument would make rejections untraceable too), a JSON report with its own schema (refused: a second contract for tool output, with no consumer), one line per skipped vector (refused: 144 lines restating public data), a derived profile plus a rule (chosen) — and why the counts must be computed rather than documented.
+- **Docs:** §7.5 defines the profile; `spec/vectors/README.md` and `README.md` point at it; CHANGELOG records `CON-29` and tool 0.11.0.
+
+**Verified:** 154 unit tests OK (was 148); `conform --coverage --verbose` 211/211 PASS, 102/142 rules referenced, 40 exempt, 0 uncovered; seven examples validate; HEAD equals the remote.
+
+**Left open:**
+- Owner review of the whole draft and the transfer to `cazucito`. Unchanged, still the only blocker on a public announcement.
+- **Phase 3's case studies and normative questions are complete; the site is what remains**, and it cannot start without a domain. Owner decision.
+- Three documented deferrals remain: `extensions["variorum:semver"].tag` holds one tag per record; `SPDX-7`'s comparison is stated, not performed; CycloneDX stays the one planned bridge.
+- Domain for the public site, `u-onoma`/`_index` registration: owner decisions, nothing in the repository invents a URL.
+
+## Previous session — 2026-11-28 (the lifecycle question, answered without a new state)
 
 **Did:** closed the last normative question the Phase 3 case studies produced. It did not need a `generated` state; it needed `candidate` to be reachable without a fabricated transition.
 

@@ -6,6 +6,8 @@ The machine-readable half of [section 07](../07-conformance.md). Any implementat
 python3 tools/variorum.py conform --coverage
 ```
 
+`--verbose` prints the suite's profile (`CON-29`): vectors per class, bridge-only vectors per bridge, and the count a `core`-and-no-bridge claim runs — the accounting a report needs to say what it skipped and why.
+
 ## Layout
 
 | File | Group | Rules |
