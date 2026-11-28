@@ -40,7 +40,17 @@ How the artifact was produced.
 
 **REC-8.** `recipe.tool.snapshot` SHOULD be present and SHOULD identify the exact model snapshot or revision. When the provider publishes no snapshot identifier, the producer MUST record `generatedAt` at the recipe level.
 
-**REC-9.** `recipe.prompt` MUST be the prompt as sent, verbatim, including any system or negative prompt in `parameters`.
+**REC-9.** `recipe.prompt` MUST hold, verbatim, the value of one field the generator accepts — never a concatenation of fields and never a paraphrase. When `recipe.promptField` is absent the mapping between `prompt` and the generator's fields is unspecified: the record says nothing about how many textual fields the generator has.
+
+**REC-23.** When the generator accepts more than one textual field, the record SHOULD name the field `recipe.prompt` holds in `recipe.promptField`, using the name the provider uses for it, and SHOULD record the remaining fields in `recipe.parameters` under their provider names (`REC-11`).
+
+**REC-24.** `recipe.promptField`, when present, MUST be a non-empty string, and MUST NOT be present unless `recipe.prompt` is.
+
+The field to promote is the one that carries what the artifact is about — the words a voice sings or speaks, the description a frame depicts — rather than one that shapes the output: a style or genre description, exclusion or negative text, a title, a voice description. A record for an instrumental that promotes the style field is not wrong; it made a different choice and named it.
+
+The case that forced these rules is Suno's Custom mode: six textual fields, no box called "prompt", and an API that reuses the name for the lyrics field. The `echo-language` case study put the lyric field in `prompt` and the remaining five in `parameters` — a defensible reading that the record did not state. `"promptField": "lyrics"` is what turns the reading into a defined one ([`docs/case-studies/echo-language.md`](../docs/case-studies/echo-language.md), [ADR-0016](../docs/adr/ADR-0016-the-prompt-is-one-field-and-the-record-names-it.md)).
+
+`prompt` is one field, not the whole input. A consumer that compares two records' prompts compares one field whose identity is known only when both records name it; when either is silent, the comparison is between strings, not between inputs — `LIN-9`'s discipline applied to the recipe.
 
 **REC-10.** `recipe.seed`, when the generator accepts one, SHOULD be recorded.
 
@@ -90,7 +100,7 @@ This rule exists because the opposite is common. Recording `seed` does not make 
 
 **REC-22.** When `determinism` is `content`, the record SHOULD state the normalization under which two executions are compared, as a non-empty string in `parameters.normalization` on the object that carries the claim — the recipe, or the stage of a hybrid recipe.
 
-"The same content" is not self-defining, and the digest cannot stand in for it: two files that hold the same geometry have different digests by construction, so a consumer who compares digests will report a correct recipe as irreproducible. The normalization is what turns the grade into a test — a canonical export, a sorted multiset, a comparison that ignores embedded timestamps. `REC-22` carries a number from after §4.6 because it was added once the case it exists for had been measured; the identifier is stable, the position is not.
+"The same content" is not self-defining, and the digest cannot stand in for it: two files that hold the same geometry have different digests by construction, so a consumer who compares digests will report a correct recipe as irreproducible. The normalization is what turns the grade into a test — a canonical export, a sorted multiset, a comparison that ignores embedded timestamps. `REC-22`, `REC-23` and `REC-24` carry numbers from after §4.6 because they were added once the cases they exist for had been measured; the identifier is stable, the position is not.
 
 ## 4.4 Inputs
 

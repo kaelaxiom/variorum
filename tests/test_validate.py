@@ -231,6 +231,49 @@ class ValidationTests(unittest.TestCase):
         determinism_warnings = [issue for issue in report.warnings if issue.rule in {"REC-12", "REC-22"}]
         self.assertEqual([], determinism_warnings)
 
+    def test_prompt_field_names_the_provider_field(self) -> None:
+        """REC-23/REC-24: a multi-field generator names which field `prompt` holds."""
+        report = variorum.validate_record(record_with(recipe={
+            "kind": "generative",
+            "tool": {"name": "suno", "model": "chirp-fenix-t4"},
+            "prompt": "Avela eka en mi.",
+            "promptField": "lyrics",
+            "parameters": {"styles": "Intimate ambient cinematic pop", "title": "Liora"},
+            "generatedAt": "2026-08-05T17:21:12Z",
+        }))
+        self.assertTrue(report.ok, report.errors)
+        self.assertEqual([], [issue for issue in report.warnings if issue.rule in {"REC-23", "REC-24"}])
+
+    def test_prompt_field_must_be_a_non_empty_string(self) -> None:
+        for value in (6, "", "   ", None):
+            with self.subTest(value=value):
+                recipe: dict[str, object] = {
+                    "kind": "generative",
+                    "tool": {"name": "suno", "model": "chirp-fenix-t4"},
+                    "prompt": "Avela eka en mi.",
+                    "generatedAt": "2026-08-05T17:21:12Z",
+                    "promptField": value,
+                }
+                self.assert_rejected(record_with(recipe=recipe), "REC-24")
+
+    def test_prompt_field_without_prompt_is_rejected(self) -> None:
+        self.assert_rejected(
+            record_with(recipe={"kind": "manual", "steps": ["Retouched by hand."], "promptField": "lyrics"}),
+            "REC-24",
+        )
+
+    def test_an_unnamed_prompt_is_not_a_warning(self) -> None:
+        """REC-23 is a SHOULD, but a validator cannot see the generator's interface, so silence is legal."""
+        report = variorum.validate_record(record_with(recipe={
+            "kind": "generative",
+            "tool": {"name": "suno", "model": "chirp-fenix-t4"},
+            "prompt": "Avela eka en mi.",
+            "parameters": {"styles": "Intimate ambient cinematic pop", "title": "Liora"},
+            "generatedAt": "2026-08-05T17:21:12Z",
+        }))
+        self.assertTrue(report.ok, report.errors)
+        self.assertEqual([], [issue for issue in report.warnings if issue.rule == "REC-23"])
+
     # State -------------------------------------------------------------- #
 
     def test_first_transition_must_start_at_draft(self) -> None:

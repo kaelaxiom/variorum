@@ -207,6 +207,70 @@
       "expect": { "valid": true }
     },
     {
+      "name": "recipe/prompt-names-the-field-it-holds",
+      "class": "recipe",
+      "description": "A generator with several textual fields: the lyric field travels in prompt, the style and exclusion fields in parameters, and promptField names the one in prompt (REC-9, REC-23).",
+      "rules": ["REC-9", "REC-23", "REC-24"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "suno", "model": "chirp-fenix-t4" },
+          "prompt": "Avela eka en mi,\nnave sora, vere stela.",
+          "promptField": "lyrics",
+          "parameters": {
+            "styles": "Intimate ambient cinematic pop, 72-84 BPM.",
+            "exclude_styles": "English lyrics, glossy autotune",
+            "title": "Liora"
+          },
+          "generatedAt": "2026-08-05T17:21:12Z",
+          "determinism": "none"
+        }
+      },
+      "expect": { "valid": true }
+    },
+    {
+      "name": "recipe/prompt-field-must-be-a-string",
+      "class": "recipe",
+      "description": "promptField names a field; a number names nothing (REC-24).",
+      "rules": ["REC-24"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "suno", "model": "chirp-fenix-t4" },
+          "prompt": "Avela eka en mi.",
+          "promptField": 6,
+          "generatedAt": "2026-08-05T17:21:12Z"
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-24"] }
+    },
+    {
+      "name": "recipe/prompt-field-must-not-be-empty",
+      "class": "recipe",
+      "description": "An empty name identifies no field, so the member would be present and useless (REC-24).",
+      "rules": ["REC-24"],
+      "patch": {
+        "recipe": {
+          "kind": "generative",
+          "tool": { "name": "suno", "model": "chirp-fenix-t4" },
+          "prompt": "Avela eka en mi.",
+          "promptField": " ",
+          "generatedAt": "2026-08-05T17:21:12Z"
+        }
+      },
+      "expect": { "valid": false, "rules": ["REC-24"] }
+    },
+    {
+      "name": "recipe/prompt-field-cannot-stand-alone",
+      "class": "recipe",
+      "description": "The member names the field that prompt holds; without prompt there is nothing to name (REC-24).",
+      "rules": ["REC-24"],
+      "patch": {
+        "recipe": { "kind": "manual", "steps": ["Retouched by hand."], "promptField": "lyrics" }
+      },
+      "expect": { "valid": false, "rules": ["REC-24"] }
+    },
+    {
       "name": "recipe/inputs-must-be-array",
       "class": "recipe",
       "description": "Inputs are a list of (ref, role) pairs, not a map.",

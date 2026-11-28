@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SPEC_VERSION = "0.1"
-TOOL_VERSION = "0.8.0"
+TOOL_VERSION = "0.9.0"
 
 DIGEST_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 ID_PATTERN = re.compile(r"^urn:variorum:sha256:[0-9a-f]{64}$")
@@ -367,7 +367,7 @@ def validate_lineage(record: dict[str, Any], report: Report) -> None:
 
 
 def validate_recipe(record: dict[str, Any], report: Report) -> None:
-    """REC-1..REC-19 (the structural subset that can be checked statically)."""
+    """REC-1..REC-24 (the structural subset that can be checked statically)."""
     recipe = record.get("recipe")
     if recipe is None:
         return
@@ -424,6 +424,16 @@ def validate_recipe_body(recipe: dict[str, Any], report: Report, path: str) -> N
                     report.add("REC-19", f"'{stage_path}.kind' must be 'build' or 'generative'")
                     continue
                 validate_recipe_body(stage, report, stage_path)
+
+    # REC-24: promptField connects `prompt` to the generator's own vocabulary
+    # (REC-23). Its shape is checkable; whether the provider has a field by that
+    # name is not, which is why REC-23 is a SHOULD and draws no warning here.
+    if "promptField" in recipe:
+        prompt_field = recipe.get("promptField")
+        if not isinstance(prompt_field, str) or not prompt_field.strip():
+            report.add("REC-24", f"'{path}.promptField' must be a non-empty string naming the generator's field")
+        if not isinstance(recipe.get("prompt"), str):
+            report.add("REC-24", f"'{path}.promptField' must not appear without '{path}.prompt'")
 
     inputs = recipe.get("inputs")
     if inputs is not None:

@@ -34,7 +34,7 @@
   - [x] [`echo-language`](../docs/case-studies/echo-language.md) — a content project whose artifacts come from a model; four takes with a generative `recipe` (`determinism: "none"`), a `lineage` edge to the lyric source and the `c2pa` bridge pointing at the provider's embedded manifest
 - [ ] Close the normative questions the case studies produced, each with an ADR before 0.2
   - [x] `REC-12` gains a `content` determinism grade, `REC-22` its normalization ([ADR-0015](../docs/adr/ADR-0015-a-recipe-can-determine-the-content-not-the-bytes.md))
-  - [ ] `REC-9` states how a multi-field generator maps onto `recipe.prompt`
+  - [x] `REC-9` states how a multi-field generator maps onto `recipe.prompt` — the member holds one field, `recipe.promptField` names it ([ADR-0016](../docs/adr/ADR-0016-the-prompt-is-one-field-and-the-record-names-it.md))
   - [ ] The lifecycle vocabulary answers whether a generated take gets a state of its own
 - [ ] Public site (domain not yet decided)
 - [ ] Announce

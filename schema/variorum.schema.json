@@ -100,6 +100,11 @@
           "anyOf": [{ "required": ["ref"] }, { "required": ["digest"] }]
         },
         "prompt": { "type": "string" },
+        "promptField": {
+          "type": "string",
+          "minLength": 1,
+          "description": "REC-24: the name the provider uses for the field whose value 'prompt' holds (REC-23), for example 'lyrics'. It cannot appear without 'prompt'; its absence means the mapping is unspecified, not that the generator has a single field."
+        },
         "seed": { "type": ["integer", "string"] },
         "parameters": { "type": "object" },
         "inputs": {
@@ -131,6 +136,7 @@
         },
         "generatedAt": { "type": "string", "format": "date-time" }
       },
+      "dependentRequired": { "promptField": ["prompt"] },
       "allOf": [
         {
           "if": { "properties": { "kind": { "const": "build" } }, "required": ["kind"] },

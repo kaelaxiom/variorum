@@ -14,7 +14,7 @@ python3 tools/variorum.py conform --coverage
 | `identity.json` | digest, identifier, producer | ID-1…ID-12 |
 | `scheme.json` | scheme name, version, authority, sequence | SCH-1…SCH-10 |
 | `lineage.json` | parents, relations, acyclicity | LIN-1…LIN-8 |
-| `recipe.json` | manual, build, generative, hybrid | REC-1…REC-19, REC-22 |
+| `recipe.json` | manual, build, generative, hybrid | REC-1…REC-19, REC-22…REC-24 |
 | `state.json` | lifecycle values and transitions | STA-1…STA-12 |
 | `attestation.json` | signature shape, canonical bytes | ATT-1…ATT-7 |
 | `conformance.json` | the declaration itself | CON-5, CON-6, CORE-7 |
